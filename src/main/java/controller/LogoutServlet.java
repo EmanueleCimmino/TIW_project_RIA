@@ -5,8 +5,12 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
+import com.google.gson.Gson;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @WebServlet("/Logout")
 public class LogoutServlet extends HttpServlet {
@@ -17,11 +21,48 @@ public class LogoutServlet extends HttpServlet {
         super();
     }
 
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        request.getSession(true).invalidate();;
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, ServletException {
 
-        String path = getServletContext().getContextPath();
-        response.sendRedirect(path);
+        System.out.println("Logout richiesto");
 
+        // Invalida la sessione
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+            System.out.println("Sessione invalidata");
+        }
+
+        // Verifica se è una richiesta AJAX (RIA) o normale
+        String ajaxHeader = request.getHeader("X-Requested-With");
+        boolean isAjax = "XMLHttpRequest".equals(ajaxHeader);
+
+        // Oppure controlla l'Accept header
+        String acceptHeader = request.getHeader("Accept");
+        boolean expectsJson = acceptHeader != null && acceptHeader.contains("application/json");
+
+        if (isAjax || expectsJson) {
+            // Risposta JSON per RIA
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+
+            Map<String, Object> jsonResponse = new HashMap<>();
+            jsonResponse.put("success", true);
+            jsonResponse.put("message", "Logout effettuato con successo");
+            jsonResponse.put("redirectUrl", getServletContext().getContextPath() + "/");
+
+            Gson gson = new Gson();
+            response.getWriter().write(gson.toJson(jsonResponse));
+        } else {
+            // Redirect tradizionale per applicazione pure HTML
+            String path = getServletContext().getContextPath();
+            response.sendRedirect(path);
+        }
+    }
+
+    // Supporto anche per POST
+    public void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, ServletException {
+        doGet(request, response);
     }
 }

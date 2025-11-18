@@ -3,4 +3,20 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
+    <context-param>
+        <param-name>db.driver</param-name>
+        <param-value>org.mariadb.jdbc.Driver</param-value>
+    </context-param>
+    <context-param>
+        <param-name>db.url</param-name>
+        <param-value>jdbc:mariadb://localhost:3306/database?serverTimezone=UTC</param-value>
+    </context-param>
+    <context-param>
+        <param-name>db.user</param-name>
+        <param-value>emanu</param-value>
+    </context-param>
+    <context-param>
+        <param-name>db.password</param-name>
+        <param-value>progetto_tiw</param-value>
+    </context-param>
 </web-app>

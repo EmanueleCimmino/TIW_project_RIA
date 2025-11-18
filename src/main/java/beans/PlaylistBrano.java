@@ -4,6 +4,7 @@ public class PlaylistBrano {
     private int id_playlist;
     private int id_brano;
     private int id_utente;
+    private int ordinamento;
 
     public int getIdPlaylist() {
         return id_playlist;
@@ -22,5 +23,11 @@ public class PlaylistBrano {
     }
     public void setId_utente(int id_utente) {
         this.id_utente = id_utente;
+    }
+    public int getOrdinamento() {
+        return ordinamento;
+    }
+    public void setOrdinamento(int ordinamento) {
+        this.ordinamento = ordinamento;
     }
 }

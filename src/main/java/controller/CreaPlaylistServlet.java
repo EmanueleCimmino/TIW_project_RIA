@@ -1,4 +1,12 @@
-package controller;
+/*package controller;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import beans.Brano;
 import beans.Utente;
@@ -14,11 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import utils.ConnectionHandler;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import com.google.gson.Gson;
 
 @WebServlet("/CreaPlaylist")
 public class CreaPlaylistServlet extends HttpServlet {
@@ -41,25 +45,24 @@ public class CreaPlaylistServlet extends HttpServlet {
         }
     }
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        // Redirect alla home se si accede via GET
-        response.sendRedirect(getServletContext().getContextPath() + "/home");
-    }
-
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         // Verifica sessione utente
         HttpSession session = request.getSession(false);
-        if (session == null) {
-            response.sendRedirect(getServletContext().getContextPath() + "/");
-            return;
-        }
+        Utente utente = (session != null) ? (Utente) session.getAttribute("utente") : null;
 
-        Utente utente = (Utente) session.getAttribute("utente");
+        Map<String, Object> jsonResponse = new HashMap<>();
+        Gson gson = new Gson();
+
         if (utente == null) {
-            response.sendRedirect(getServletContext().getContextPath() + "/");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+
+            jsonResponse.put("success", false);
+            jsonResponse.put("error", "Utente non autenticato");
+            response.getWriter().write(gson.toJson(jsonResponse));
             return;
         }
 
@@ -69,20 +72,35 @@ public class CreaPlaylistServlet extends HttpServlet {
 
         // Validazione lato server
         if (playlist_titolo == null || playlist_titolo.trim().isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                    "Il titolo della playlist è obbligatorio");
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+
+            jsonResponse.put("success", false);
+            jsonResponse.put("error", "Il titolo della playlist è obbligatorio");
+            response.getWriter().write(gson.toJson(jsonResponse));
             return;
         }
 
         if (playlist_titolo.length() > 50) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                    "Il titolo della playlist non può superare i 50 caratteri");
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+
+            jsonResponse.put("success", false);
+            jsonResponse.put("error", "Il titolo della playlist non può superare i 50 caratteri");
+            response.getWriter().write(gson.toJson(jsonResponse));
             return;
         }
 
         if (braniSelezionatiIds == null || braniSelezionatiIds.length == 0) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                    "Seleziona almeno un brano per creare la playlist");
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+
+            jsonResponse.put("success", false);
+            jsonResponse.put("error", "Seleziona almeno un brano per creare la playlist");
+            response.getWriter().write(gson.toJson(jsonResponse));
             return;
         }
 
@@ -101,23 +119,38 @@ public class CreaPlaylistServlet extends HttpServlet {
                     Brano brano = branoDAO.getBrano(brano_id);
 
                     if (brano == null) {
-                        response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                                "Brano non trovato: " + brano_id);
+                        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                        response.setContentType("application/json");
+                        response.setCharacterEncoding("UTF-8");
+
+                        jsonResponse.put("success", false);
+                        jsonResponse.put("error", "Brano non trovato: " + brano_id);
+                        response.getWriter().write(gson.toJson(jsonResponse));
                         return;
                     }
 
                     // Verifica che il brano appartenga all'utente (sicurezza)
                     if (brano.getId_utente() != utente.getId_utente()) {
-                        response.sendError(HttpServletResponse.SC_FORBIDDEN,
-                                "Non hai i permessi per aggiungere questo brano");
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.setContentType("application/json");
+                        response.setCharacterEncoding("UTF-8");
+
+                        jsonResponse.put("success", false);
+                        jsonResponse.put("error", "Non hai i permessi per aggiungere questo brano");
+                        response.getWriter().write(gson.toJson(jsonResponse));
                         return;
                     }
 
                     braniSelezionati.add(brano);
 
                 } catch (NumberFormatException e) {
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                            "ID brano non valido: " + idString);
+                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    response.setContentType("application/json");
+                    response.setCharacterEncoding("UTF-8");
+
+                    jsonResponse.put("success", false);
+                    jsonResponse.put("error", "ID brano non valido: " + idString);
+                    response.getWriter().write(gson.toJson(jsonResponse));
                     return;
                 }
             }
@@ -125,14 +158,26 @@ public class CreaPlaylistServlet extends HttpServlet {
             // Crea la playlist utilizzando il metodo esistente del DAO
             playlistDAO.creaPlaylist(playlist_titolo.trim(), braniSelezionati, utente);
 
-            // Redirect alla home dopo la creazione con successo
-            response.sendRedirect(getServletContext().getContextPath() + "/home");
+            // Risposta di successo
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+
+            jsonResponse.put("success", true);
+            jsonResponse.put("message", "Playlist creata con successo");
+            response.getWriter().write(gson.toJson(jsonResponse));
 
         } catch (SQLException e) {
             System.err.println("Errore SQL nella creazione della playlist: " + e.getMessage());
             e.printStackTrace();
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "Errore nel database durante la creazione della playlist");
+
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+
+            jsonResponse.put("success", false);
+            jsonResponse.put("error", "Errore nel database durante la creazione della playlist");
+            response.getWriter().write(gson.toJson(jsonResponse));
         }
     }
 
@@ -146,4 +191,4 @@ public class CreaPlaylistServlet extends HttpServlet {
             e.printStackTrace();
         }
     }
-}
+}*/

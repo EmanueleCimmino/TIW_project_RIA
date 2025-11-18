@@ -106,25 +106,6 @@ public class BranoDAO {
         }
     }
 
-    //NON NECESSARIO
-    /*
-    public void eliminaBrano(int id_brano, int id_utente) throws SQLException {
-        this.controllaUtenteBrano(id_brano, id_utente);
-
-        String query = "DELETE FROM playlist_brano WHERE id_brano = ? AND id_utente = ?";
-        try (PreparedStatement pstatement = connection.prepareStatement(query);) {
-            pstatement.setInt(1, id_brano);
-            pstatement.executeUpdate();
-        }
-
-        query = "DELETE FROM brano WHERE id_brano = ? AND id_utente = ?";
-        try (PreparedStatement pstatement = connection.prepareStatement(query);) {
-            pstatement.setInt(1, id_brano);
-            pstatement.executeUpdate();
-        }
-    }
-    */
-
     public void controllaUtenteBrano(int id_brano, int id_utente) throws SQLException {
         int count = 0;
         String query = "SELECT COUNT(*) AS total FROM brano WHERE id_brano = ? AND id_utente = ?";
@@ -181,8 +162,9 @@ public class BranoDAO {
         return brani;
     }
 
+    // MODIFICATO: Aggiunto pb.ordinamento nella SELECT e nel setOrdinamento
     public List<Brano> getBraniDaPlaylist(int id_playlist) throws SQLException {
-        String query = "SELECT b.* FROM brano b " +
+        String query = "SELECT b.*, pb.ordinamento FROM brano b " +
                 "INNER JOIN playlist_brano pb ON b.id_brano = pb.id_brano " +
                 "INNER JOIN album a ON b.id_album = a.id_album " +
                 "WHERE pb.id_playlist = ? " +
@@ -199,6 +181,7 @@ public class BranoDAO {
                     brano.setFile_musicale(result.getString("file_musicale"));
                     brano.setId_utente(result.getInt("id_utente"));
                     brano.setId_album(result.getInt("id_album"));
+                    brano.setOrdinamento(result.getInt("ordinamento")); // NUOVO
                     brani.add(brano);
                 }
             }

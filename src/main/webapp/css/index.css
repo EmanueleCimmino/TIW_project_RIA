@@ -1,0 +1,181 @@
+/* CSS per PoliMusic - Home Page */
+
+/* Reset base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Container principale */
+.container {
+    max-width: 600px;
+    margin: 50px auto;
+    background: white;
+    padding: 50px 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* Icona musicale decorativa */
+.music-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    background-color: #0066cc;
+    border-radius: 50%;
+    position: relative;
+}
+
+.music-icon::before {
+    content: "♪";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 40px;
+    color: white;
+}
+
+/* Titolo principale */
+h1 {
+    color: #333;
+    font-size: 36px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+/* Sottotitolo */
+.subtitle {
+    color: #666;
+    font-size: 18px;
+    margin-bottom: 40px;
+}
+
+/* Gruppo pulsanti */
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-top: 30px;
+}
+
+/* Sezione azione */
+.action-section {
+    padding: 20px;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+}
+
+.section-title {
+    color: #333;
+    font-size: 18px;
+    margin-bottom: 15px;
+    font-weight: normal;
+}
+
+/* Pulsanti */
+.btn {
+    display: inline-block;
+    width: 100%;
+    max-width: 300px;
+    padding: 14px 30px;
+    background-color: #0066cc;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+    background-color: #0052a3;
+}
+
+.btn:active {
+    background-color: #003d7a;
+}
+
+/* Pulsante secondario */
+.btn-secondary {
+    background-color: #5c9eff;
+}
+
+.btn-secondary:hover {
+    background-color: #4a8de8;
+}
+
+.btn-secondary:active {
+    background-color: #3a7dd6;
+}
+
+/* Responsive - per tablet */
+@media (max-width: 768px) {
+    .container {
+        margin: 30px 20px;
+        padding: 40px 30px;
+    }
+
+    h1 {
+        font-size: 30px;
+    }
+
+    .subtitle {
+        font-size: 16px;
+    }
+}
+
+/* Responsive - per telefoni */
+@media (max-width: 480px) {
+    .container {
+        margin: 20px;
+        padding: 30px 20px;
+    }
+
+    h1 {
+        font-size: 26px;
+    }
+
+    .subtitle {
+        font-size: 15px;
+        margin-bottom: 30px;
+    }
+
+    .music-icon {
+        width: 60px;
+        height: 60px;
+    }
+
+    .music-icon::before {
+        font-size: 30px;
+    }
+
+    .button-group {
+        gap: 20px;
+    }
+
+    .action-section {
+        padding: 15px;
+    }
+
+    .section-title {
+        font-size: 16px;
+    }
+
+    .btn {
+        padding: 12px 25px;
+        font-size: 15px;
+    }
+}

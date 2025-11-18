@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="./css/login.css"/>
+    <title>PoliMusic - Login</title>
+</head>
+<body>
+
+<nav>
+    <a href="./" class="back-home" title="Torna alla home">
+        <span aria-hidden="true">←</span> Torna alla home
+    </a>
+</nav>
+
+<main id="main-content" class="login-container">
+    <header class="header">
+        <h1>Bentornato!</h1>
+        <p class="welcome-text">Accedi al tuo account PoliMusic</p>
+    </header>
+
+    <div id="errorMessage" class="error-message" role="alert" aria-live="polite" style="display: none;">
+        <strong>Errore:</strong> <span id="errorText"></span>
+    </div>
+
+    <form id="loginForm" method="POST" novalidate>
+        <fieldset>
+            <legend class="sr-only">Credenziali di accesso</legend>
+
+            <div class="form-group">
+                <label for="username">Nome Utente *</label>
+                <input type="text"
+                       id="username"
+                       name="username"
+                       required
+                       autocomplete="username"
+                       placeholder="Inserisci il tuo username"
+                       pattern="[a-zA-Z0-9_]{3,20}"
+                       title="L'username deve contenere almeno 3 caratteri"
+                       aria-describedby="username-help">
+                <small id="username-help" class="form-help">
+                    Almeno 3 caratteri, solo lettere e numeri
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password *</label>
+                <input type="password"
+                       id="password"
+                       name="password"
+                       required
+                       autocomplete="current-password"
+                       placeholder="Inserisci la tua password"
+                       minlength="3"
+                       title="La password deve contenere almeno 3 caratteri"
+                       aria-describedby="password-help">
+                <small id="password-help" class="form-help">
+                    Almeno 3 caratteri
+                </small>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                <span id="btnText">Accedi a PoliMusic</span>
+                <span id="btnLoader" class="btn-loader" style="display: none;">Accesso in corso...</span>
+            </button>
+        </fieldset>
+    </form>
+
+    <footer class="signup-link">
+        <p>Non hai ancora un account?
+            <a href="./registrazione.html" class="signup-link">Registrati qui</a>
+        </p>
+    </footer>
+</main>
+
+<script src="utils.js" charset="UTF-8" defer></script>
+<script src="login.js" charset="UTF-8" defer></script>
+
+</body>
+</html>
