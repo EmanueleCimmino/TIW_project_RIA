@@ -1,8 +1,7 @@
-/*package controller;
+package controller;
 
 import beans.Utente;
 import daos.UtenteDAO;
-import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.UnavailableException;
 import jakarta.servlet.annotation.WebServlet;
@@ -12,188 +11,182 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import utils.ConnectionHandler;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Pattern;
-
-import com.google.gson.Gson;
 
 @WebServlet("/registrazione")
 public class RegistrazioneServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private Connection connection;
-
-    public RegistrazioneServlet() {
-        super();
-    }
+    private Gson gson;
 
     @Override
     public void init() throws ServletException {
-        try {
-            ServletContext context = getServletContext();
-            this.connection = ConnectionHandler.getConnection(context);
-
-            if (this.connection == null || this.connection.isClosed()) {
-                throw new ServletException("Impossibile stabilire connessione al database");
-            }
-
-            System.out.println("RegistrazioneServlet inizializzata correttamente con connessione al DB");
-
-        } catch (UnavailableException | SQLException e) {
-            System.err.println("Errore durante l'inizializzazione della servlet: " + e.getMessage());
-            e.printStackTrace();
-            throw new ServletException("Errore nell'inizializzazione della servlet", e);
-        }
+        super.init();
+        gson = new Gson();
+        System.out.println("RegistrazioneServlet inizializzata con supporto JSON");
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        // Imposta il tipo di risposta come JSON
+        response.setContentType("application/json;charset=UTF-8");
+
         System.out.println("RegistrazioneServlet.doPost() chiamato");
+        System.out.println("Content-Type ricevuto: " + request.getContentType());
 
-        String username = request.getParameter("username");
-        String nome = request.getParameter("nome");
-        String cognome = request.getParameter("cognome");
-        String password = request.getParameter("password");
+        String username = null;
+        String nome = null;
+        String cognome = null;
+        String password = null;
 
-        Map<String, Object> jsonResponse = new HashMap<>();
-        Gson gson = new Gson();
-        String error = null;
+        // Leggi il JSON dal body
+        try (BufferedReader reader = request.getReader()) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
 
-        // Log parametri ricevuti
-        System.out.println("Username: " + username);
-        System.out.println("Nome: " + nome);
-        System.out.println("Cognome: " + cognome);
-        System.out.println("Password: " + (password != null ? "***" : "null"));
+            String jsonString = sb.toString();
+            System.out.println("JSON ricevuto: " + jsonString);
 
-        // Validazione campi obbligatori
-        if (username == null || password == null || username.isEmpty() || password.isEmpty()
-                || nome == null || nome.isEmpty() || cognome == null || cognome.isEmpty()) {
-            error = "Tutti i campi sono obbligatori";
+            // Parsing JSON con Gson
+            JsonObject jsonObject = JsonParser.parseString(jsonString).getAsJsonObject();
+
+            if (jsonObject.has("username")) {
+                username = jsonObject.get("username").getAsString();
+            }
+            if (jsonObject.has("nome")) {
+                nome = jsonObject.get("nome").getAsString();
+            }
+            if (jsonObject.has("cognome")) {
+                cognome = jsonObject.get("cognome").getAsString();
+            }
+            if (jsonObject.has("password")) {
+                password = jsonObject.get("password").getAsString();
+            }
+
+            System.out.println("Dati estratti - Username: " + username + ", Nome: " + nome + ", Cognome: " + cognome);
+
+        } catch (Exception e) {
+            System.err.println("Errore nel parsing JSON: " + e.getMessage());
+            e.printStackTrace();
+            sendErrorResponse(response, 400, "Formato JSON non valido");
+            return;
         }
+
+        // Validazione parametri
+        if (username == null || password == null || nome == null || cognome == null ||
+                username.trim().isEmpty() || password.trim().isEmpty() ||
+                nome.trim().isEmpty() || cognome.trim().isEmpty()) {
+            System.out.println("Errore: parametri mancanti");
+            sendErrorResponse(response, 400, "Tutti i campi sono obbligatori");
+            return;
+        }
+
         // Validazione formato username
-        else if (!Pattern.compile("^[a-zA-Z0-9_]{3,}$").matcher(username).matches()) {
-            error = "Username non valido. Deve contenere almeno 3 caratteri alfanumerici o underscore";
+        Pattern userPattern = Pattern.compile("^[a-zA-Z0-9_]{3,}$");
+        if (!userPattern.matcher(username).matches()) {
+            sendErrorResponse(response, 400, "Username non valido. Deve contenere almeno 3 caratteri alfanumerici o underscore");
+            return;
         }
+
         // Validazione formato nome
-        else if (!Pattern.compile("^[a-zA-Z0-9_]{3,}$").matcher(nome).matches()) {
-            error = "Nome non valido. Deve contenere almeno 3 caratteri alfanumerici o underscore";
+        Pattern nomePattern = Pattern.compile("^[a-zA-Z0-9_]{3,}$");
+        if (!nomePattern.matcher(nome).matches()) {
+            sendErrorResponse(response, 400, "Nome non valido. Deve contenere almeno 3 caratteri alfanumerici o underscore");
+            return;
         }
+
         // Validazione formato cognome
-        else if (!Pattern.compile("^[a-zA-Z0-9_]{3,}$").matcher(cognome).matches()) {
-            error = "Cognome non valido. Deve contenere almeno 3 caratteri alfanumerici o underscore";
+        Pattern cognomePattern = Pattern.compile("^[a-zA-Z0-9_]{3,}$");
+        if (!cognomePattern.matcher(cognome).matches()) {
+            sendErrorResponse(response, 400, "Cognome non valido. Deve contenere almeno 3 caratteri alfanumerici o underscore");
+            return;
         }
+
         // Validazione formato password
-        else if (!Pattern.compile("^[a-zA-Z0-9_]{3,}$").matcher(password).matches()) {
-            error = "Password non valida. Deve contenere almeno 3 caratteri alfanumerici o underscore";
-        }
-
-        // Se ci sono errori di validazione, ritorna subito
-        if (error != null) {
-            System.out.println("Errore validazione: " + error);
-
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST); // 400
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-
-            jsonResponse.put("success", false);
-            jsonResponse.put("error", error);
-
-            response.getWriter().write(gson.toJson(jsonResponse));
+        Pattern passwordPattern = Pattern.compile("^[a-zA-Z0-9_]{3,}$");
+        if (!passwordPattern.matcher(password).matches()) {
+            sendErrorResponse(response, 400, "Password non valida. Deve contenere almeno 3 caratteri alfanumerici o underscore");
             return;
         }
 
         // Creazione utente nel database
-        Connection conn = null;
+        Connection connection = null;
         try {
-            // Ottieni connessione fresca
-            conn = ConnectionHandler.getConnection(getServletContext());
-            UtenteDAO utenteDAO = new UtenteDAO(conn);
-
-            System.out.println("Tentativo creazione utente: " + username);
+            connection = ConnectionHandler.getConnection(getServletContext());
+            UtenteDAO utenteDAO = new UtenteDAO(connection);
 
             // Crea l'utente
             utenteDAO.creaUtente(username, nome, cognome, password);
 
-            System.out.println("Utente creato con successo: " + username);
-
-            // Recupera l'utente appena creato per metterlo in sessione
-            Utente nuovoUtente = utenteDAO.controlloAutenticazione(username, password);
+            // Recupera l'utente creato per ottenere l'ID
+            Utente nuovoUtente = utenteDAO.getUtenteDaUsername(username);
 
             if (nuovoUtente != null) {
-                // Crea sessione e salva utente
+                // Salva l'utente nella sessione (auto-login dopo registrazione)
                 HttpSession session = request.getSession(true);
                 session.setAttribute("utente", nuovoUtente);
+                session.setMaxInactiveInterval(30 * 60); // 30 minuti
 
-                System.out.println("Utente inserito in sessione");
+                System.out.println("Registrazione riuscita per: " + nuovoUtente.getUsername());
+
+                // Risposta JSON di successo
+                JsonObject responseJson = new JsonObject();
+                responseJson.addProperty("success", true);
+                responseJson.addProperty("redirectUrl", "home.html");
+
+                response.setStatus(200);
+                response.getWriter().write(gson.toJson(responseJson));
+            } else {
+                sendErrorResponse(response, 500, "Errore durante la creazione dell'utente");
             }
 
-            // Risposta di successo
-            response.setStatus(HttpServletResponse.SC_OK); // 200
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-
-            jsonResponse.put("success", true);
-            jsonResponse.put("message", "Registrazione completata con successo!");
-            jsonResponse.put("redirectUrl", getServletContext().getContextPath() + "/home.html");
-            jsonResponse.put("username", username);
-
-            String jsonSuccess = gson.toJson(jsonResponse);
-            System.out.println("Risposta successo: " + jsonSuccess);
-            response.getWriter().write(jsonSuccess);
-
-        } catch (SQLException e) {
-            // Errore nella creazione dell'utente
-            System.err.println("Errore SQL durante registrazione: " + e.getMessage());
+        } catch (SQLException | UnavailableException e) {
+            System.err.println("Errore database: " + e.getMessage());
             e.printStackTrace();
 
-            response.setStatus(HttpServletResponse.SC_CONFLICT); // 409
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-
-            jsonResponse.put("success", false);
-            jsonResponse.put("error", "Impossibile creare un nuovo utente. L'username potrebbe essere già esistente.");
-
-            response.getWriter().write(gson.toJson(jsonResponse));
-
-        } catch (UnavailableException e) {
-            System.err.println("Errore di connessione durante registrazione: " + e.getMessage());
-            e.printStackTrace();
-
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // 500
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-
-            jsonResponse.put("success", false);
-            jsonResponse.put("error", "Servizio temporaneamente non disponibile");
-
-            response.getWriter().write(gson.toJson(jsonResponse));
+            // Verifica se è un errore di duplicazione username
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("duplicate")) {
+                sendErrorResponse(response, 409, "Username già esistente. Scegline un altro.");
+            } else {
+                sendErrorResponse(response, 500, "Impossibile creare un nuovo utente. Riprova più tardi.");
+            }
 
         } finally {
             // Chiudi la connessione se è stata aperta
-            if (conn != null) {
+            if (connection != null) {
                 try {
-                    conn.close();
+                    connection.close();
                 } catch (SQLException ignored) {
                 }
             }
         }
     }
 
-    @Override
-    public void destroy() {
-        if (connection != null) {
-            try {
-                connection.close();
-                System.out.println("Connessione DB chiusa");
-            } catch (SQLException e) {
-                System.err.println("Errore nella chiusura della connessione: " + e.getMessage());
-            }
-        }
+    /**
+     * Metodo helper per inviare risposte di errore in formato JSON
+     */
+    private void sendErrorResponse(HttpServletResponse response, int status, String errorMessage)
+            throws IOException {
+        JsonObject errorJson = new JsonObject();
+        errorJson.addProperty("success", false);
+        errorJson.addProperty("error", errorMessage);
+
+        response.setStatus(status);
+        response.getWriter().write(gson.toJson(errorJson));
+
+        System.out.println("Risposta errore: " + gson.toJson(errorJson));
     }
-}*/
+}

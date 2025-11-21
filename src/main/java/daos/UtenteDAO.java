@@ -109,6 +109,25 @@ public class UtenteDAO {
         }
     }*/
 
+    public Utente getUtenteDaUsername(String username) throws SQLException {
+        String query = "SELECT id_utente, username, nome, cognome FROM utenti WHERE username = ?";
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Utente u = new Utente();
+                    u.setId_utente(rs.getInt("id_utente"));
+                    u.setUsername(rs.getString("username"));
+                    u.setNome(rs.getString("nome"));
+                    u.setCognome(rs.getString("cognome"));
+                    return u;
+                }
+                return null;
+            }
+        }
+    }
+
+
     public Utente getUtente(int id_utente) throws SQLException {
         String query = "SELECT * FROM utente WHERE id_utente = ?";
         try (PreparedStatement pstatement = connection.prepareStatement(query);) {

@@ -1,5 +1,5 @@
 /**
- * registrazione.js - Logica per la pagina di registrazione di PoliMusic
+ * registrazione.js - Logica RIA per la registrazione di PoliMusic
  */
 
 (function() {
@@ -18,7 +18,7 @@
     /**
      * Inizializzazione quando il DOM è pronto
      */
-    window.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
         console.log('Registrazione page inizializzata');
         initializeElements();
         initializeEventListeners();
@@ -106,11 +106,6 @@
     function validateRegistrationForm() {
         hideError();
 
-        const nome = nomeInput.value.trim();
-        const cognome = cognomeInput.value.trim();
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value.trim();
-
         let isValid = true;
         let firstInvalidField = null;
 
@@ -164,76 +159,72 @@
         // Disabilita il form durante il submit
         setFormLoading(true);
 
-        // Prepara i dati del form
-        const formData = new FormData(registrationForm);
-
-        // Debug: verifica i dati
-        console.log('Dati form registrazione:');
-        for (let [key, value] of formData.entries()) {
-            console.log(`${key}: ${value}`);
-        }
-
-        // Chiamata AJAX alla servlet
+        // Chiamata AJAX alla servlet con JSON
         makeCall(
             'POST',
-            './registrazione',
-            formData,
-            onRegistrationSuccess,
-            onRegistrationError,
-            false // Non usare JSON, usa FormData
+            'registrazione',
+            registrationForm,
+            function(req) {
+                if (req.readyState !== XMLHttpRequest.DONE) return;
+
+                setFormLoading(false);
+
+                const message = req.responseText;
+
+                console.log("Status:", req.status);
+                console.log("Response:", message);
+
+                if (req.status === 200) {
+                    let response;
+                    try {
+                        response = JSON.parse(message);
+                    } catch (e) {
+                        // Fallback se non è JSON
+                        showSuccess("✅ Registrazione completata! Benvenuto in PoliMusic!");
+                        setTimeout(() => {
+                            window.location.href = "home.html";
+                        }, 1500);
+                        return;
+                    }
+
+                    if (response.success !== false) {
+                        // Salva username in sessionStorage
+                        sessionStorage.setItem('username', usernameInput.value);
+
+                        showSuccess("✅ Registrazione completata! Benvenuto in PoliMusic!");
+
+                        // Pulisci il form
+                        registrationForm.reset();
+
+                        // Redirect dopo un breve delay
+                        setTimeout(() => {
+                            window.location.href = response.redirectUrl || "home.html";
+                        }, 1500);
+
+                    } else {
+                        showErrorMessage(response.error || "Errore durante la registrazione");
+                        if (nomeInput) nomeInput.focus();
+                    }
+
+                } else if (req.status === 409) {
+                    // Username duplicato
+                    showErrorMessage("Username già esistente. Scegline un altro.");
+                    usernameInput.focus();
+                    usernameInput.classList.add('input-error');
+                } else if (req.status === 400) {
+                    // Errore di validazione
+                    try {
+                        const response = JSON.parse(message);
+                        showErrorMessage(response.error || "Compila correttamente tutti i campi");
+                    } catch (e) {
+                        showErrorMessage("Compila correttamente tutti i campi");
+                    }
+                } else {
+                    showErrorMessage(message || "Errore durante la registrazione. Riprova.");
+                }
+            },
+            false // Usa JSON (gestito da makeCall con utils.js)
         );
-    }
-
-    /**
-     * Callback in caso di registrazione riuscita
-     * @param {Object} response - Risposta dal server
-     */
-    function onRegistrationSuccess(response) {
-        console.log('Risposta registrazione:', response);
-
-        setFormLoading(false);
-
-        if (response.success) {
-            // Registrazione riuscita
-            showSuccess('Registrazione completata! Benvenuto in PoliMusic!');
-
-            // Pulisci il form
-            registrationForm.reset();
-
-            // Redirect alla home dopo un breve delay
-            setTimeout(() => {
-                const redirectUrl = response.redirectUrl || './home.html';
-                console.log('Redirect a:', redirectUrl);
-                redirectTo(redirectUrl);
-            }, 1500);
-
-        } else {
-            // Registrazione fallita
-            showErrorMessage(response.error || 'Errore durante la registrazione');
-
-            // Focus sul primo campo
-            if (nomeInput) {
-                nomeInput.focus();
-            }
-        }
-    }
-
-    /**
-     * Callback in caso di errore nella chiamata
-     * @param {string} error - Messaggio di errore
-     */
-    function onRegistrationError(error) {
-        console.error('Errore registrazione:', error);
-
-        setFormLoading(false);
-
-        // Mostra messaggio di errore
-        showErrorMessage(error || 'Errore durante la registrazione. Riprova.');
-
-        // Focus sul primo campo
-        if (nomeInput) {
-            nomeInput.focus();
-        }
     }
 
     /**
@@ -247,8 +238,27 @@
         if (errorDiv && errorText) {
             errorText.textContent = message;
             errorDiv.style.display = 'block';
+            errorDiv.style.backgroundColor = '';
+            errorDiv.style.borderColor = '';
+            errorDiv.style.color = '';
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
 
-            // Scroll to error message
+    /**
+     * Mostra un messaggio di successo
+     * @param {string} message - Messaggio da mostrare
+     */
+    function showSuccess(message) {
+        const errorDiv = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+
+        if (errorDiv && errorText) {
+            errorText.textContent = message;
+            errorDiv.style.display = 'block';
+            errorDiv.style.backgroundColor = '#d4edda';
+            errorDiv.style.borderColor = '#c3e6cb';
+            errorDiv.style.color = '#155724';
             errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     }
