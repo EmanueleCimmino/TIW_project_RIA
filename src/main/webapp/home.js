@@ -751,7 +751,7 @@
         contenitore.appendChild(divSelezionaTutti);
 
         document.getElementById('selectAllBraniDisponibili')?.addEventListener('change', (e) => {
-            contenitore.querySelectorAll('input[name="selectedSongs"]').forEach(cb => {
+            contenitore.querySelectorAll('input[name="braniSelezionati_id"]').forEach(cb => {
                 cb.checked = e.target.checked;
             });
         });
@@ -768,7 +768,7 @@
 
             divBrano.innerHTML = `
                 <label>
-                    <input type="checkbox" name="selectedSongs" value="${brano.id_brano}">
+                    <input type="checkbox" name="braniSelezionati_id" value="${brano.id_brano}">
                     <span class="brano-info">
                         <strong>${escapeHtml(brano.titolo)}</strong>
                         <span class="brano-meta">
@@ -791,7 +791,7 @@
         e.preventDefault();
 
         const form = e.target;
-        const checkboxes = form.querySelectorAll('input[name="selectedSongs"]:checked');
+        const checkboxes = form.querySelectorAll('input[name="braniSelezionati_id"]:checked');
 
         if (checkboxes.length === 0) {
             mostraMessaggioPlaylist('⚠️ Seleziona almeno un brano', 'error');
@@ -917,13 +917,29 @@
     /**
      * Apre il modale player per un brano
      */
+    /**
+     * Apre il modale player per un brano
+     */
     function apriModalePlayer(idBrano) {
-        console.log('Apri modale player per brano:', idBrano);
+        console.log('Apri modale player per brano:', idBrano, 'tipo:', typeof idBrano);
+
+        // ✅ FIX: Converti idBrano in numero per confronto corretto
+        const idBranoNum = parseInt(idBrano);
+        console.log('ID convertito:', idBranoNum);
+
+        // DEBUG: Mostra tutti gli ID disponibili
+        console.log('IDs disponibili nella playlist:', braniPlaylistCorrente.map(b => b.id_brano));
 
         // Trova il brano nei dati correnti
-        const brano = braniPlaylistCorrente.find(b => b.id_brano == idBrano);
+        const brano = braniPlaylistCorrente.find(b => {
+            console.log(`Confronto: ${b.id_brano} (${typeof b.id_brano}) == ${idBranoNum} (${typeof idBranoNum}) = ${b.id_brano == idBranoNum}`);
+            return b.id_brano == idBranoNum;
+        });
+
         if (!brano) {
-            console.error('Brano non trovato');
+            console.error('Brano non trovato - ID cercato:', idBranoNum);
+            console.log('Brani disponibili:', braniPlaylistCorrente.map(b => ({id: b.id_brano, titolo: b.titolo})));
+            alert('Errore: Brano non trovato nella playlist corrente');
             return;
         }
 
@@ -931,7 +947,10 @@
 
         // Apri modale
         const modale = document.getElementById('modalPlayer');
-        if (!modale) return;
+        if (!modale) {
+            console.error('Modale player non trovato nel DOM');
+            return;
+        }
 
         modale.classList.remove('hidden');
         modale.style.display = 'flex';
@@ -957,6 +976,8 @@
             audioPlayer.src = `GetAudio?brano_id=${brano.id_brano}`;
             audioPlayer.load();
         }
+
+        console.log('✅ Modale player aperto per:', brano.titolo);
     }
 
     /**

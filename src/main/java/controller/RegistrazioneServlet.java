@@ -145,7 +145,7 @@ public class RegistrazioneServlet extends HttpServlet {
                 // Risposta JSON di successo
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("success", true);
-                responseJson.addProperty("redirectUrl", "home.html");
+                responseJson.addProperty("redirectUrl", "index.html");
 
                 response.setStatus(200);
                 response.getWriter().write(gson.toJson(responseJson));

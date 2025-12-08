@@ -122,19 +122,19 @@ public class BranoDAO {
         }
     }
 
-    public int getIdBranoDaFile(String file_musicale) throws SQLException {
-        String query = "SELECT id_brano FROM brano WHERE file_musicale = ?";
-        try (PreparedStatement pstatement = connection.prepareStatement(query)) {
-            pstatement.setString(1, file_musicale);
-            try (ResultSet result = pstatement.executeQuery()) {
-                if (result.next()) {
-                    return result.getInt("id_brano");
-                } else {
-                    throw new SQLException("Brano non trovato");
-                }
-            }
-        }
-    }
+//    public int getIdBranoDaFile(String file_musicale) throws SQLException {
+//        String query = "SELECT id_brano FROM brano WHERE file_musicale = ?";
+//        try (PreparedStatement pstatement = connection.prepareStatement(query)) {
+//            pstatement.setString(1, file_musicale);
+//            try (ResultSet result = pstatement.executeQuery()) {
+//                if (result.next()) {
+//                    return result.getInt("id_brano");
+//                } else {
+//                    throw new SQLException("Brano non trovato");
+//                }
+//            }
+//        }
+//    }
 
     public List<Brano> getBraniDaUtenteInterpreteAnno(int id_utente) throws SQLException {
         String query = "SELECT b.id_brano, b.titolo, b.file_musicale, b.id_album, b.id_utente, " +
@@ -162,7 +162,6 @@ public class BranoDAO {
         return brani;
     }
 
-    // MODIFICATO: Aggiunto pb.ordinamento nella SELECT e nel setOrdinamento
     public List<Brano> getBraniDaPlaylist(int id_playlist) throws SQLException {
         String query = "SELECT b.*, pb.ordinamento FROM brano b " +
                 "INNER JOIN playlist_brano pb ON b.id_brano = pb.id_brano " +

@@ -49,29 +49,29 @@ public class UtenteDAO {
         }
     }
 
-    public Utente controlloAutenticazione(String username, String password) throws SQLException {
-        String query = "SELECT * FROM utente WHERE username = ? AND password = ?";
-        try (PreparedStatement pstatement = connection.prepareStatement(query);) {
-            pstatement.setString(1, username);
-            pstatement.setString(2, password);
-            try (ResultSet result = pstatement.executeQuery();) {
-                if (result.next()) {
-                    Utente utente = new Utente();
-                    utente.setId_utente(result.getInt("id_utente"));
-                    utente.setUsername(username);
-                    utente.setNome(result.getString("nome"));
-                    utente.setCognome(result.getString("cognome"));
-                    utente.setPassword(result.getString("password"));
-                    return utente;
-                }
-            }
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            throw e;
-        }
-    return null;
-}
+//    public Utente controlloAutenticazione(String username, String password) throws SQLException {
+//        String query = "SELECT * FROM utente WHERE username = ? AND password = ?";
+//        try (PreparedStatement pstatement = connection.prepareStatement(query);) {
+//            pstatement.setString(1, username);
+//            pstatement.setString(2, password);
+//            try (ResultSet result = pstatement.executeQuery();) {
+//                if (result.next()) {
+//                    Utente utente = new Utente();
+//                    utente.setId_utente(result.getInt("id_utente"));
+//                    utente.setUsername(username);
+//                    utente.setNome(result.getString("nome"));
+//                    utente.setCognome(result.getString("cognome"));
+//                    utente.setPassword(result.getString("password"));
+//                    return utente;
+//                }
+//            }
+//        }
+//        catch (SQLException e) {
+//            e.printStackTrace();
+//            throw e;
+//        }
+//    return null;
+//}
 
     //DA ELIMINARE PROBABILMENTE
     /*public void eliminaUtente(String username) throws SQLException {
@@ -110,7 +110,7 @@ public class UtenteDAO {
     }*/
 
     public Utente getUtenteDaUsername(String username) throws SQLException {
-        String query = "SELECT id_utente, username, nome, cognome FROM utenti WHERE username = ?";
+        String query = "SELECT id_utente, username, nome, cognome FROM utente WHERE username = ?";
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
@@ -128,64 +128,64 @@ public class UtenteDAO {
     }
 
 
-    public Utente getUtente(int id_utente) throws SQLException {
-        String query = "SELECT * FROM utente WHERE id_utente = ?";
-        try (PreparedStatement pstatement = connection.prepareStatement(query);) {
-            pstatement.setInt(1, id_utente);
-            try (ResultSet result = pstatement.executeQuery();) {
-                if (result.next()) {
-                    Utente utente = new Utente();
-                    utente.setId_utente(id_utente);
-                    utente.setUsername(result.getString("username"));
-                    utente.setNome(result.getString("nome"));
-                    utente.setCognome(result.getString("cognome"));
-                    utente.setPassword(result.getString("password"));
-                    return utente;
-                }
-            }
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            throw e;
-        }
-        return null;
-    }
+//    public Utente getUtente(int id_utente) throws SQLException {
+//        String query = "SELECT * FROM utente WHERE id_utente = ?";
+//        try (PreparedStatement pstatement = connection.prepareStatement(query);) {
+//            pstatement.setInt(1, id_utente);
+//            try (ResultSet result = pstatement.executeQuery();) {
+//                if (result.next()) {
+//                    Utente utente = new Utente();
+//                    utente.setId_utente(id_utente);
+//                    utente.setUsername(result.getString("username"));
+//                    utente.setNome(result.getString("nome"));
+//                    utente.setCognome(result.getString("cognome"));
+//                    utente.setPassword(result.getString("password"));
+//                    return utente;
+//                }
+//            }
+//        }
+//        catch (SQLException e) {
+//            e.printStackTrace();
+//            throw e;
+//        }
+//        return null;
+//    }
 
 
 
 
-    public ArrayList<Playlist> playlistUtente(Utente utente) throws SQLException {
-        int userId = -1;
-        String query = "SELECT id_utente FROM utente WHERE username = ?";
-        try (PreparedStatement pstatement = connection.prepareStatement(query);) {
-            pstatement.setString(1, utente.getUsername());
-            try (ResultSet rs = pstatement.executeQuery()) {
-                if (rs.next()) {
-                    userId = rs.getInt("id_utente");
-                }
-            }
-        }
-
-        if (userId == -1) {
-            throw new SQLException("Utente non trovato");
-        }
-        ArrayList<Playlist> playlists = new ArrayList<>();
-        query = "SELECT id_playlist, titolo, data_creazione FROM playlist WHERE id_utente = ? ORDER BY playlist.data_creazione DESC";
-        try (PreparedStatement pstatement = connection.prepareStatement(query);) {
-            pstatement.setInt(1, userId);
-            try (ResultSet result = pstatement.executeQuery();) {
-                while (result.next()) {
-                    Playlist playlist = new Playlist();
-                    playlist.setId(result.getInt("id_playlist"));
-                    playlist.setId_utente(userId);
-                    playlist.setTitolo(result.getString("titolo"));
-                    playlist.setData_creazione(result.getTimestamp("data_creazione").toLocalDateTime());
-                    playlists.add(playlist);
-                }
-            }
-        }
-        return playlists;
-    }
+//    public ArrayList<Playlist> playlistUtente(Utente utente) throws SQLException {
+//        int userId = -1;
+//        String query = "SELECT id_utente FROM utente WHERE username = ?";
+//        try (PreparedStatement pstatement = connection.prepareStatement(query);) {
+//            pstatement.setString(1, utente.getUsername());
+//            try (ResultSet rs = pstatement.executeQuery()) {
+//                if (rs.next()) {
+//                    userId = rs.getInt("id_utente");
+//                }
+//            }
+//        }
+//
+//        if (userId == -1) {
+//            throw new SQLException("Utente non trovato");
+//        }
+//        ArrayList<Playlist> playlists = new ArrayList<>();
+//        query = "SELECT id_playlist, titolo, data_creazione FROM playlist WHERE id_utente = ? ORDER BY playlist.data_creazione DESC";
+//        try (PreparedStatement pstatement = connection.prepareStatement(query);) {
+//            pstatement.setInt(1, userId);
+//            try (ResultSet result = pstatement.executeQuery();) {
+//                while (result.next()) {
+//                    Playlist playlist = new Playlist();
+//                    playlist.setId(result.getInt("id_playlist"));
+//                    playlist.setId_utente(userId);
+//                    playlist.setTitolo(result.getString("titolo"));
+//                    playlist.setData_creazione(result.getTimestamp("data_creazione").toLocalDateTime());
+//                    playlists.add(playlist);
+//                }
+//            }
+//        }
+//        return playlists;
+//    }
 
     //DA RIFARE
     /*public ArrayList<Brano> getBraniUtente(int id_utente) throws SQLException {

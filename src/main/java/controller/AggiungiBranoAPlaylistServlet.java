@@ -1,7 +1,10 @@
 package controller;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,20 +26,27 @@ import jakarta.servlet.http.HttpSession;
 import utils.ConnectionHandler;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 @WebServlet("/AggiungiBranoAPlaylist")
 public class AggiungiBranoAPlaylistServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private Connection connection = null;
+    private Gson gson;
 
     public void init() throws ServletException {
         try {
             ServletContext context = getServletContext();
             this.connection = ConnectionHandler.getConnection(context);
+            this.gson = new Gson();
 
             if (this.connection == null || this.connection.isClosed()) {
                 throw new ServletException("Impossibile stabilire connessione al database");
             }
+
+            System.out.println("AggiungiBranoAPlaylistServlet inizializzata correttamente");
 
         } catch (UnavailableException | SQLException e) {
             System.err.println("Errore durante l'inizializzazione della servlet: " + e.getMessage());
@@ -48,168 +58,256 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        response.setContentType("application/json;charset=UTF-8");
+
+        System.out.println("AggiungiBranoAPlaylistServlet.doPost() chiamato");
+        System.out.println("Content-Type: " + request.getContentType());
+
         // Verifica sessione utente
         HttpSession session = request.getSession(false);
         Utente utente = (session != null) ? (Utente) session.getAttribute("utente") : null;
 
-        Map<String, Object> jsonResponse = new HashMap<>();
-        Gson gson = new Gson();
-
         if (utente == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-
-            jsonResponse.put("success", false);
-            jsonResponse.put("error", "Utente non autenticato");
-            response.getWriter().write(gson.toJson(jsonResponse));
+            System.out.println("Errore: utente non autenticato");
+            sendErrorResponse(response, 401, "Utente non autenticato");
             return;
         }
 
-        // Recupera parametri dal form
-        String playlist_id_param = request.getParameter("playlist_id");
-        String[] braniSelezionati_id = request.getParameterValues("selectedSongs");
+        System.out.println("Utente autenticato: " + utente.getUsername());
 
-        // Validazione lato server
-        if (playlist_id_param == null || playlist_id_param.trim().isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
+        // Determina se è JSON o form-data
+        String contentType = request.getContentType();
+        boolean isJson = contentType != null && contentType.contains("application/json");
 
-            jsonResponse.put("success", false);
-            jsonResponse.put("error", "ID playlist mancante");
-            response.getWriter().write(gson.toJson(jsonResponse));
-            return;
+        int playlistId;
+        ArrayList<Integer> braniIds = new ArrayList<>();
+
+        if (isJson) {
+            // Parsing JSON
+            try (BufferedReader reader = request.getReader()) {
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line);
+                }
+
+                String jsonString = sb.toString();
+                System.out.println("JSON ricevuto: " + jsonString);
+
+                JsonObject jsonObject = JsonParser.parseString(jsonString).getAsJsonObject();
+
+                if (!jsonObject.has("playlist_id")) {
+                    System.out.println("Errore: playlist_id mancante nel JSON");
+                    sendErrorResponse(response, 400, "ID playlist mancante");
+                    return;
+                }
+
+                playlistId = jsonObject.get("playlist_id").getAsInt();
+
+                // Controlla sia selectedSongs (nuovo nome) che braniSelezionati_id (vecchio nome)
+                String arrayKey = jsonObject.has("selectedSongs") ? "selectedSongs" : "braniSelezionati_id";
+
+                if (!jsonObject.has(arrayKey)) {
+                    System.out.println("Errore: array brani mancante nel JSON");
+                    sendErrorResponse(response, 400, "Seleziona almeno un brano");
+                    return;
+                }
+
+                // selectedSongs/braniSelezionati_id può essere un array o un singolo valore
+                if (jsonObject.get(arrayKey).isJsonArray()) {
+                    JsonArray selectedSongs = jsonObject.getAsJsonArray(arrayKey);
+                    for (int i = 0; i < selectedSongs.size(); i++) {
+                        String value = selectedSongs.get(i).getAsString();
+                        braniIds.add(Integer.parseInt(value));
+                    }
+                } else {
+                    String value = jsonObject.get(arrayKey).getAsString();
+                    braniIds.add(Integer.parseInt(value));
+                }
+
+                System.out.println("Playlist ID: " + playlistId);
+                System.out.println("Brani da aggiungere: " + braniIds.size());
+
+            } catch (Exception e) {
+                System.err.println("Errore parsing JSON: " + e.getMessage());
+                e.printStackTrace();
+                sendErrorResponse(response, 400, "Formato JSON non valido");
+                return;
+            }
+
+        } else {
+            // Parsing form-data (fallback per compatibilità con vecchio progetto)
+            String playlistIdParam = request.getParameter("playlist_id");
+            String[] braniSelezionati = request.getParameterValues("braniSelezionati_id");
+
+            // Se non trova braniSelezionati_id, prova con selectedSongs
+            if (braniSelezionati == null) {
+                braniSelezionati = request.getParameterValues("selectedSongs");
+            }
+
+            System.out.println("Form-data ricevuto");
+            System.out.println("playlist_id: " + playlistIdParam);
+            System.out.println("brani: " + (braniSelezionati != null ? braniSelezionati.length : "null"));
+
+            if (playlistIdParam == null || playlistIdParam.trim().isEmpty()) {
+                sendErrorResponse(response, 400, "ID playlist mancante");
+                return;
+            }
+
+            try {
+                playlistId = Integer.parseInt(playlistIdParam);
+            } catch (NumberFormatException e) {
+                sendErrorResponse(response, 400, "ID playlist non valido");
+                return;
+            }
+
+            if (braniSelezionati == null || braniSelezionati.length == 0) {
+                sendErrorResponse(response, 400, "Seleziona almeno un brano");
+                return;
+            }
+
+            for (String idString : braniSelezionati) {
+                try {
+                    braniIds.add(Integer.parseInt(idString));
+                } catch (NumberFormatException e) {
+                    sendErrorResponse(response, 400, "ID brano non valido: " + idString);
+                    return;
+                }
+            }
         }
 
-        int playlist_id;
-        try {
-            playlist_id = Integer.parseInt(playlist_id_param);
-        } catch (NumberFormatException e) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-
-            jsonResponse.put("success", false);
-            jsonResponse.put("error", "ID playlist non valido");
-            response.getWriter().write(gson.toJson(jsonResponse));
-            return;
-        }
-
-        if (braniSelezionati_id == null || braniSelezionati_id.length == 0) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-
-            jsonResponse.put("success", false);
-            jsonResponse.put("error", "Seleziona almeno un brano da aggiungere");
-            response.getWriter().write(gson.toJson(jsonResponse));
-            return;
-        }
-
+        // Logica di aggiunta brani (identica al vecchio progetto)
         PlaylistDAO playlistDAO = new PlaylistDAO(connection);
         BranoDAO branoDAO = new BranoDAO(connection);
 
         try {
             // Verifica che la playlist appartenga all'utente
-            playlistDAO.controllaUtentePlaylist(playlist_id, utente.getId_utente());
+            playlistDAO.controllaUtentePlaylist(playlistId, utente.getId_utente());
 
             // Recupera l'oggetto Playlist
-            Playlist playlist = playlistDAO.getPlaylist(playlist_id);
+            Playlist playlist = playlistDAO.getPlaylist(playlistId);
             if (playlist == null) {
-                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                response.setContentType("application/json");
-                response.setCharacterEncoding("UTF-8");
-
-                jsonResponse.put("success", false);
-                jsonResponse.put("error", "Playlist non trovata");
-                response.getWriter().write(gson.toJson(jsonResponse));
+                System.out.println("Errore: playlist non trovata");
+                sendErrorResponse(response, 404, "Playlist non trovata");
                 return;
             }
 
             // Converti gli ID dei brani e recupera gli oggetti Brano
             ArrayList<Brano> braniDaAggiungere = new ArrayList<>();
 
-            for (String idString : braniSelezionati_id) {
-                try {
-                    int brano_id = Integer.parseInt(idString);
+            for (int branoId : braniIds) {
+                Brano brano = branoDAO.getBrano(branoId);
 
-                    // Recupera il brano dal database
-                    Brano brano = branoDAO.getBrano(brano_id);
-
-                    if (brano == null) {
-                        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                        response.setContentType("application/json");
-                        response.setCharacterEncoding("UTF-8");
-
-                        jsonResponse.put("success", false);
-                        jsonResponse.put("error", "Brano non trovato: " + brano_id);
-                        response.getWriter().write(gson.toJson(jsonResponse));
-                        return;
-                    }
-
-                    // Verifica che il brano appartenga all'utente (sicurezza)
-                    if (brano.getId_utente() != utente.getId_utente()) {
-                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                        response.setContentType("application/json");
-                        response.setCharacterEncoding("UTF-8");
-
-                        jsonResponse.put("success", false);
-                        jsonResponse.put("error", "Non hai i permessi per aggiungere questo brano");
-                        response.getWriter().write(gson.toJson(jsonResponse));
-                        return;
-                    }
-
-                    braniDaAggiungere.add(brano);
-
-                } catch (NumberFormatException e) {
-                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                    response.setContentType("application/json");
-                    response.setCharacterEncoding("UTF-8");
-
-                    jsonResponse.put("success", false);
-                    jsonResponse.put("error", "ID brano non valido: " + idString);
-                    response.getWriter().write(gson.toJson(jsonResponse));
+                if (brano == null) {
+                    System.out.println("Errore: brano non trovato - ID: " + branoId);
+                    sendErrorResponse(response, 400, "Brano non trovato: " + branoId);
                     return;
+                }
+
+                // Verifica che il brano appartenga all'utente (sicurezza)
+                if (brano.getId_utente() != utente.getId_utente()) {
+                    System.out.println("Errore: permessi insufficienti per brano ID: " + branoId);
+                    sendErrorResponse(response, 403, "Non hai i permessi per aggiungere questo brano");
+                    return;
+                }
+
+                braniDaAggiungere.add(brano);
+            }
+
+            // *** NUOVA LOGICA: Gestione ordinamento personalizzato ***
+
+            // Prima aggiungi i brani alla playlist normalmente
+            branoDAO.aggiungiBraniAllaPlaylist(braniDaAggiungere, playlist, utente);
+
+            // Ora recupera TUTTI i brani della playlist per verificare se c'è ordinamento personalizzato
+            // Usa una query diretta invece di chiamare metodi del DAO
+            String checkQuery = "SELECT id_brano, ordinamento FROM playlist_brano WHERE id_playlist = ? ORDER BY ordinamento DESC";
+
+            try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
+                checkStmt.setInt(1, playlistId);
+
+                try (ResultSet rs = checkStmt.executeQuery()) {
+                    boolean hasOrdinamentoPersonalizzato = false;
+                    int maxOrdinamento = 0;
+
+                    // Controlla se esiste ordinamento personalizzato
+                    while (rs.next()) {
+                        int ord = rs.getInt("ordinamento");
+                        if (ord > 0) {
+                            hasOrdinamentoPersonalizzato = true;
+                            if (ord > maxOrdinamento) {
+                                maxOrdinamento = ord;
+                            }
+                        }
+                    }
+
+                    System.out.println("Ordinamento personalizzato rilevato: " + hasOrdinamentoPersonalizzato);
+                    System.out.println("Max ordinamento esistente: " + maxOrdinamento);
+
+                    // Se c'è ordinamento personalizzato, aggiorna i brani appena aggiunti
+                    if (hasOrdinamentoPersonalizzato) {
+                        int nextOrdinamento = maxOrdinamento + 1;
+
+                        System.out.println("Assegnazione ordinamento ai nuovi brani a partire da: " + nextOrdinamento);
+
+                        String updateQuery = "UPDATE playlist_brano SET ordinamento = ? WHERE id_playlist = ? AND id_brano = ?";
+
+                        try (PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
+                            for (Brano brano : braniDaAggiungere) {
+                                updateStmt.setInt(1, nextOrdinamento);
+                                updateStmt.setInt(2, playlistId);
+                                updateStmt.setInt(3, brano.getId());
+                                updateStmt.executeUpdate();
+
+                                System.out.println("Brano \"" + brano.getTitolo() + "\" - ordinamento impostato a: " + nextOrdinamento);
+                                nextOrdinamento++;
+                            }
+                        }
+
+                        System.out.println("✅ Brani aggiunti in coda con ordinamento personalizzato");
+                    } else {
+                        System.out.println("✅ Brani aggiunti senza ordinamento personalizzato");
+                    }
                 }
             }
 
-            // Aggiungi i brani alla playlist usando il metodo esistente del DAO
-            branoDAO.aggiungiBraniAllaPlaylist(braniDaAggiungere, playlist, utente);
+            System.out.println("✅ Brani aggiunti con successo - Count: " + braniDaAggiungere.size());
 
-            // Risposta di successo
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-
+            // Risposta di successo (JSON per RIA)
+            Map<String, Object> jsonResponse = new HashMap<>();
             jsonResponse.put("success", true);
             jsonResponse.put("message", "Brani aggiunti con successo alla playlist");
             jsonResponse.put("braniAggiunti", braniDaAggiungere.size());
+
+            response.setStatus(200);
             response.getWriter().write(gson.toJson(jsonResponse));
 
         } catch (SQLException e) {
-            // Se il brano è già nella playlist, viene lanciata un'eccezione
-            if (e.getMessage() != null && e.getMessage().contains("already in playlist")) {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.setContentType("application/json");
-                response.setCharacterEncoding("UTF-8");
+            System.err.println("Errore SQL: " + e.getMessage());
+            e.printStackTrace();
 
-                jsonResponse.put("success", false);
-                jsonResponse.put("error", "Uno o più brani selezionati sono già presenti nella playlist");
-                response.getWriter().write(gson.toJson(jsonResponse));
+            // Se il brano è già nella playlist
+            if (e.getMessage() != null && e.getMessage().contains("già nella playlist")) {
+                sendErrorResponse(response, 400, "Uno o più brani sono già presenti nella playlist");
             } else {
-                System.err.println("Errore SQL nell'aggiunta dei brani alla playlist: " + e.getMessage());
-                e.printStackTrace();
-
-                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                response.setContentType("application/json");
-                response.setCharacterEncoding("UTF-8");
-
-                jsonResponse.put("success", false);
-                jsonResponse.put("error", "Errore nel database durante l'aggiunta dei brani");
-                response.getWriter().write(gson.toJson(jsonResponse));
+                sendErrorResponse(response, 500, "Errore nel database durante l'aggiunta dei brani");
             }
         }
+    }
+
+    /**
+     * Metodo helper per inviare risposte di errore in formato JSON
+     */
+    private void sendErrorResponse(HttpServletResponse response, int status, String errorMessage)
+            throws IOException {
+        Map<String, Object> errorJson = new HashMap<>();
+        errorJson.put("success", false);
+        errorJson.put("error", errorMessage);
+
+        response.setStatus(status);
+        response.getWriter().write(gson.toJson(errorJson));
+
+        System.out.println("Risposta errore: " + gson.toJson(errorJson));
     }
 
     public void destroy() {

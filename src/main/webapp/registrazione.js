@@ -159,72 +159,86 @@
         // Disabilita il form durante il submit
         setFormLoading(true);
 
-        // Chiamata AJAX alla servlet con JSON
-        makeCall(
-            'POST',
-            'registrazione',
-            registrationForm,
-            function(req) {
-                if (req.readyState !== XMLHttpRequest.DONE) return;
+        // Prepara i dati manualmente (NON usare FormData che potrebbe essere vuoto)
+        const registrationData = {
+            nome: nomeInput.value.trim(),
+            cognome: cognomeInput.value.trim(),
+            username: usernameInput.value.trim(),
+            password: passwordInput.value.trim()
+        };
 
-                setFormLoading(false);
+        console.log('Dati da inviare:', registrationData);
 
-                const message = req.responseText;
+        // Chiamata AJAX manuale
+        const xhr = new XMLHttpRequest();
 
-                console.log("Status:", req.status);
-                console.log("Response:", message);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return;
 
-                if (req.status === 200) {
-                    let response;
-                    try {
-                        response = JSON.parse(message);
-                    } catch (e) {
-                        // Fallback se non è JSON
-                        showSuccess("✅ Registrazione completata! Benvenuto in PoliMusic!");
-                        setTimeout(() => {
-                            window.location.href = "home.html";
-                        }, 1500);
-                        return;
-                    }
+            setFormLoading(false);
 
-                    if (response.success !== false) {
-                        // Salva username in sessionStorage
-                        sessionStorage.setItem('username', usernameInput.value);
+            const message = xhr.responseText;
 
-                        showSuccess("✅ Registrazione completata! Benvenuto in PoliMusic!");
+            console.log("Status:", xhr.status);
+            console.log("Response:", message);
 
-                        // Pulisci il form
-                        registrationForm.reset();
-
-                        // Redirect dopo un breve delay
-                        setTimeout(() => {
-                            window.location.href = response.redirectUrl || "home.html";
-                        }, 1500);
-
-                    } else {
-                        showErrorMessage(response.error || "Errore durante la registrazione");
-                        if (nomeInput) nomeInput.focus();
-                    }
-
-                } else if (req.status === 409) {
-                    // Username duplicato
-                    showErrorMessage("Username già esistente. Scegline un altro.");
-                    usernameInput.focus();
-                    usernameInput.classList.add('input-error');
-                } else if (req.status === 400) {
-                    // Errore di validazione
-                    try {
-                        const response = JSON.parse(message);
-                        showErrorMessage(response.error || "Compila correttamente tutti i campi");
-                    } catch (e) {
-                        showErrorMessage("Compila correttamente tutti i campi");
-                    }
-                } else {
-                    showErrorMessage(message || "Errore durante la registrazione. Riprova.");
+            if (xhr.status === 200) {
+                let response;
+                try {
+                    response = JSON.parse(message);
+                } catch (e) {
+                    // Fallback se non è JSON
+                    showSuccess("✅ Registrazione completata! Benvenuto in PoliMusic!");
+                    setTimeout(() => {
+                        window.location.href = "index.html";
+                    }, 1500);
+                    return;
                 }
-            },
-            false // Usa JSON (gestito da makeCall con utils.js)
-        );
+
+                if (response.success !== false) {
+                    // Salva username in sessionStorage
+                    sessionStorage.setItem('username', usernameInput.value);
+
+                    showSuccess("✅ Registrazione completata! Benvenuto in PoliMusic!");
+
+                    // Redirect dopo un breve delay
+                    setTimeout(() => {
+                        window.location.href = "index.html";
+                    }, 1500);
+
+                } else {
+                    showErrorMessage(response.error || "Errore durante la registrazione");
+                    if (nomeInput) nomeInput.focus();
+                }
+
+            } else if (xhr.status === 409) {
+                // Username duplicato
+                showErrorMessage("Username già esistente. Scegline un altro.");
+                usernameInput.focus();
+                usernameInput.classList.add('input-error');
+            } else if (xhr.status === 400) {
+                // Errore di validazione
+                try {
+                    const response = JSON.parse(message);
+                    showErrorMessage(response.error || "Compila correttamente tutti i campi");
+                } catch (e) {
+                    showErrorMessage("Compila correttamente tutti i campi");
+                }
+            } else {
+                showErrorMessage(message || "Errore durante la registrazione. Riprova.");
+            }
+        };
+
+        // Apri la connessione
+        xhr.open('POST', 'registrazione', true);
+
+        // Imposta l'header per JSON
+        xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+
+        // Invia i dati come JSON
+        xhr.send(JSON.stringify(registrationData));
+
+        console.log('JSON inviato:', JSON.stringify(registrationData));
     }
 
     /**
