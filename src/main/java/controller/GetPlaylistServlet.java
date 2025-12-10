@@ -52,7 +52,6 @@ public class GetPlaylistServlet extends HttpServlet {
                                     context1.serialize(src.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
                     .create();
 
-            System.out.println("GetPlaylistServlet inizializzata correttamente");
 
         } catch (UnavailableException | SQLException e) {
             System.err.println("Errore durante l'inizializzazione della servlet: " + e.getMessage());
@@ -63,9 +62,8 @@ public class GetPlaylistServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws IOException {
 
-        System.out.println("GetPlaylistServlet.doGet() chiamato");
 
         HttpSession session = request.getSession(false);
         Utente utente = (session != null) ? (Utente) session.getAttribute("utente") : null;
@@ -74,7 +72,6 @@ public class GetPlaylistServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         if (utente == null) {
-            System.out.println("Utente non autenticato");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
             Map<String, Object> errorResponse = new HashMap<>();
@@ -145,18 +142,15 @@ public class GetPlaylistServlet extends HttpServlet {
 
             // Recupera tutti i brani della playlist (ordinati)
             List<Brano> brani = branoDAO.getBraniDaPlaylist(idPlaylist);
-            System.out.println("Brani trovati nella playlist: " + brani.size());
 
             // Recupera i brani disponibili da aggiungere (non già nella playlist)
             List<Brano> braniDisponibili = branoDAO.getBraniDisponibiliPlaylist(
                     utente.getId_utente(),
                     idPlaylist
             );
-            System.out.println("Brani disponibili da aggiungere: " + braniDisponibili.size());
 
             // Recupera tutti gli album per creare la mappa
             List<Album> albums = albumDAO.getAlbums();
-            System.out.println("Album trovati: " + albums.size());
 
             // Prepara la risposta JSON
             Map<String, Object> jsonResponse = new HashMap<>();
@@ -169,7 +163,6 @@ public class GetPlaylistServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write(gson.toJson(jsonResponse));
 
-            System.out.println("Dati playlist inviati con successo");
 
         } catch (SQLException e) {
             System.err.println("Errore SQL nel recupero della playlist: " + e.getMessage());
@@ -190,7 +183,6 @@ public class GetPlaylistServlet extends HttpServlet {
         try {
             if (connection != null && !connection.isClosed()) {
                 ConnectionHandler.closeConnection(connection);
-                System.out.println("Connessione DB chiusa");
             }
         } catch (SQLException e) {
             System.err.println("Errore durante la chiusura della connessione: " + e.getMessage());

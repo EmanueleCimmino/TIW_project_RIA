@@ -45,7 +45,7 @@ public class GetAudioServlet extends HttpServlet {
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws IOException {
 
         System.out.println("GetAudioServlet.doGet() chiamato");
 
@@ -143,11 +143,11 @@ public class GetAudioServlet extends HttpServlet {
      * Questo è necessario per permettere al player HTML5 di fare seek (spostarsi avanti/indietro)
      */
     private void serveAudioWithRangeSupport(File audioFile, HttpServletRequest request,
-                                            HttpServletResponse response) throws IOException {
+                                            HttpServletResponse response) {
 
-        long fileLength = audioFile.length();
-        long start = 0;
-        long end = fileLength - 1;
+        long lunghezzaFile = audioFile.length();
+        long inizio = 0;
+        long fine = lunghezzaFile - 1;
 
         // Imposta il content type
         String mimeType = getServletContext().getMimeType(audioFile.getName());
@@ -169,71 +169,67 @@ public class GetAudioServlet extends HttpServlet {
             try {
                 // Parse start
                 if (ranges.length > 0 && !ranges[0].trim().isEmpty()) {
-                    start = Long.parseLong(ranges[0].trim());
+                    inizio = Long.parseLong(ranges[0].trim());
                 }
 
                 // Parse end (opzionale)
                 if (ranges.length > 1 && !ranges[1].trim().isEmpty()) {
-                    end = Long.parseLong(ranges[1].trim());
+                    fine = Long.parseLong(ranges[1].trim());
                 }
 
                 // Valida il range
-                if (start < 0 || start >= fileLength || end >= fileLength || start > end) {
-                    System.out.println("Range non valido: " + start + "-" + end + " (file size: " + fileLength + ")");
+                if (inizio < 0 || inizio >= lunghezzaFile || fine >= lunghezzaFile || inizio > fine) {
                     response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
-                    response.setHeader("Content-Range", "bytes */" + fileLength);
+                    response.setHeader("Content-Range", "bytes */" + lunghezzaFile);
                     return;
                 }
 
                 // Imposta status 206 Partial Content
                 response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
-                response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileLength);
+                response.setHeader("Content-Range", "bytes " + inizio + "-" + fine + "/" + lunghezzaFile);
                 response.setHeader("Accept-Ranges", "bytes");
-                response.setContentLengthLong(end - start + 1);
+                response.setContentLengthLong(fine - inizio + 1);
 
-                System.out.println("Serving partial content: bytes " + start + "-" + end + "/" + fileLength);
 
             } catch (NumberFormatException e) {
                 System.err.println("Errore parsing range header: " + e.getMessage());
                 // Range non valido, invia tutto il file
-                start = 0;
-                end = fileLength - 1;
+                inizio = 0;
+                fine = lunghezzaFile - 1;
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.setHeader("Accept-Ranges", "bytes");
-                response.setContentLengthLong(fileLength);
-                System.out.println("Range parsing fallito, serving full file");
+                response.setContentLengthLong(lunghezzaFile);
             }
         } else {
             // Nessun range specificato, invia tutto il file
             response.setStatus(HttpServletResponse.SC_OK);
             response.setHeader("Accept-Ranges", "bytes");
-            response.setContentLengthLong(fileLength);
-            System.out.println("No range header, serving full file: " + fileLength + " bytes");
+            response.setContentLengthLong(lunghezzaFile);
         }
 
         // Invia i dati del file
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(audioFile, "r")) {
             // Posizionati all'offset di inizio
-            randomAccessFile.seek(start);
+            randomAccessFile.seek(inizio);
 
             byte[] buffer = new byte[BUFFER_SIZE];
-            long bytesToRead = end - start + 1;
-            long bytesRead = 0;
+            long byteDaLeggere = fine - inizio + 1;
+            long byteLetti = 0;
 
-            while (bytesToRead > 0) {
-                int len = randomAccessFile.read(buffer, 0, (int) Math.min(buffer.length, bytesToRead));
+            while (byteDaLeggere > 0) {
+                int lunghezza = randomAccessFile.read(buffer, 0, (int) Math.min(buffer.length, byteDaLeggere));
 
-                if (len == -1) {
+                if (lunghezza == -1) {
                     break; // Fine del file
                 }
 
-                response.getOutputStream().write(buffer, 0, len);
-                bytesToRead -= len;
-                bytesRead += len;
+                response.getOutputStream().write(buffer, 0, lunghezza);
+                byteDaLeggere -= lunghezza;
+                byteLetti += lunghezza;
             }
 
             response.getOutputStream().flush();
-            System.out.println("Audio servito con successo: " + bytesRead + " bytes inviati");
+            System.out.println("Audio servito con successo: " + byteLetti + " bytes inviati");
 
         } catch (IOException e) {
             // Il client potrebbe aver chiuso la connessione (normale per il seeking)
@@ -242,7 +238,7 @@ public class GetAudioServlet extends HttpServlet {
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws IOException {
         doGet(request, response);
     }
 

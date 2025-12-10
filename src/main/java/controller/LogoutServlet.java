@@ -24,13 +24,11 @@ public class LogoutServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException {
 
-        System.out.println("Logout richiesto");
 
         // Invalida la sessione
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
-            System.out.println("Sessione invalidata");
         }
 
         // Verifica se è una richiesta AJAX (RIA) o normale

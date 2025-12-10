@@ -63,7 +63,7 @@ public class HomeServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws IOException {
 
         System.out.println("HomeServlet.doGet() chiamato");
 
@@ -95,15 +95,12 @@ public class HomeServlet extends HttpServlet {
         try {
             // Recupera le playlist dell'utente (ordinate per data decrescente)
             List<Playlist> playlists = playlistDAO.getPlaylistDaUtente(utente.getId_utente());
-            System.out.println("Playlists trovate: " + playlists.size());
 
             // Recupera tutti gli album disponibili
             List<Album> albums = albumDAO.getAlbums();
-            System.out.println("Albums trovati: " + albums.size());
 
             // Recupera i brani dell'utente (ordinati per interprete e anno)
             List<Brano> brani = branoDAO.getBraniDaUtenteInterpreteAnno(utente.getId_utente());
-            System.out.println("Brani trovati: " + brani.size());
 
             // Prepara la risposta JSON
             Map<String, Object> jsonResponse = new HashMap<>();
@@ -117,7 +114,6 @@ public class HomeServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write(gson.toJson(jsonResponse));
 
-            System.out.println("Dati inviati con successo");
 
         } catch (SQLException e) {
             System.err.println("Errore SQL nel recupero dei dati: " + e.getMessage());
@@ -138,7 +134,6 @@ public class HomeServlet extends HttpServlet {
         try {
             if (connection != null && !connection.isClosed()) {
                 ConnectionHandler.closeConnection(connection);
-                System.out.println("Connessione DB chiusa");
             }
         } catch (SQLException e) {
             System.err.println("Errore durante la chiusura della connessione: " + e.getMessage());

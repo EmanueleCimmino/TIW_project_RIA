@@ -45,7 +45,7 @@ public class GetAlbumServlet extends HttpServlet {
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws  IOException {
 
         // Verifica sessione utente
         HttpSession session = request.getSession(false);
@@ -132,9 +132,9 @@ public class GetAlbumServlet extends HttpServlet {
                  OutputStream outputStream = response.getOutputStream()) {
 
                 byte[] buffer = new byte[8192];
-                int bytesRead;
-                while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
+                int byteLetti;
+                while ((byteLetti = fileInputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, byteLetti);
                 }
             }
 

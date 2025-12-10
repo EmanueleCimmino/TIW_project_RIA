@@ -36,13 +36,10 @@ public class RegistrazioneServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws IOException {
 
         // Imposta il tipo di risposta come JSON
         response.setContentType("application/json;charset=UTF-8");
-
-        System.out.println("RegistrazioneServlet.doPost() chiamato");
-        System.out.println("Content-Type ricevuto: " + request.getContentType());
 
         String username = null;
         String nome = null;
@@ -52,9 +49,9 @@ public class RegistrazioneServlet extends HttpServlet {
         // Leggi il JSON dal body
         try (BufferedReader reader = request.getReader()) {
             StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
+            String riga;
+            while ((riga = reader.readLine()) != null) {
+                sb.append(riga);
             }
 
             String jsonString = sb.toString();
@@ -76,7 +73,6 @@ public class RegistrazioneServlet extends HttpServlet {
                 password = jsonObject.get("password").getAsString();
             }
 
-            System.out.println("Dati estratti - Username: " + username + ", Nome: " + nome + ", Cognome: " + cognome);
 
         } catch (Exception e) {
             System.err.println("Errore nel parsing JSON: " + e.getMessage());
@@ -89,7 +85,6 @@ public class RegistrazioneServlet extends HttpServlet {
         if (username == null || password == null || nome == null || cognome == null ||
                 username.trim().isEmpty() || password.trim().isEmpty() ||
                 nome.trim().isEmpty() || cognome.trim().isEmpty()) {
-            System.out.println("Errore: parametri mancanti");
             sendErrorResponse(response, 400, "Tutti i campi sono obbligatori");
             return;
         }
@@ -139,8 +134,6 @@ public class RegistrazioneServlet extends HttpServlet {
                 HttpSession session = request.getSession(true);
                 session.setAttribute("utente", nuovoUtente);
                 session.setMaxInactiveInterval(30 * 60); // 30 minuti
-
-                System.out.println("Registrazione riuscita per: " + nuovoUtente.getUsername());
 
                 // Risposta JSON di successo
                 JsonObject responseJson = new JsonObject();

@@ -18,9 +18,9 @@ public class BranoDAO {
         this.connection = connection;
     }
 
-    public void caricaBrano(String titolo, String file_musicale,
-                            int id_album, int id_utente) throws SQLException{
+    public void caricaBrano(String titolo, String file_musicale, int id_album, int id_utente) throws SQLException{
         String query = "INSERT INTO brano (titolo, file_musicale, id_album, id_utente) VALUES (?,?,?,?)";
+
         try (PreparedStatement pstatement = connection.prepareStatement(query)) {
             pstatement.setString(1, titolo);
             pstatement.setString(2, file_musicale);
@@ -34,8 +34,8 @@ public class BranoDAO {
     }
 
     public Brano getBrano(int id_brano) throws SQLException {
-
         String query = "SELECT * FROM brano WHERE id_brano = ?";
+
         try(PreparedStatement pstatement = connection.prepareStatement(query)) {
             pstatement.setInt(1, id_brano);
             try (ResultSet result = pstatement.executeQuery()) {
@@ -74,10 +74,11 @@ public class BranoDAO {
             }
         }
         if(count > 0) {
-            throw new SQLException("Song already in playlist");
+            throw new SQLException("Brani già in playlist");
         }
 
         query = "INSERT INTO playlist_brano (id_brano, id_playlist, id_utente) VALUES (?,?,?)";
+
         try(PreparedStatement pstatement = connection.prepareStatement(query)) {
             pstatement.setInt(1, brano.getId());
             pstatement.setInt(2, playlist.getId());
@@ -88,6 +89,7 @@ public class BranoDAO {
 
     public void aggiungiBraniAllaPlaylist(ArrayList<Brano> brani, Playlist playlist, Utente utente) throws SQLException {
         connection.setAutoCommit(false);
+
         if(!brani.isEmpty()) {
             try {
                 for(Brano brano : brani) {
@@ -107,8 +109,9 @@ public class BranoDAO {
     }
 
     public void controllaUtenteBrano(int id_brano, int id_utente) throws SQLException {
-        int count = 0;
         String query = "SELECT COUNT(*) AS total FROM brano WHERE id_brano = ? AND id_utente = ?";
+
+        int count = 0;
         try (PreparedStatement pstatement = connection.prepareStatement(query)) {
             pstatement.setInt(1, id_brano);
             pstatement.setInt(2, id_utente);
@@ -118,29 +121,16 @@ public class BranoDAO {
             }
         }
         if(count <= 0) {
-            throw new SQLException("Invalid song");
+            throw new SQLException("Brano non valido");
         }
     }
-
-//    public int getIdBranoDaFile(String file_musicale) throws SQLException {
-//        String query = "SELECT id_brano FROM brano WHERE file_musicale = ?";
-//        try (PreparedStatement pstatement = connection.prepareStatement(query)) {
-//            pstatement.setString(1, file_musicale);
-//            try (ResultSet result = pstatement.executeQuery()) {
-//                if (result.next()) {
-//                    return result.getInt("id_brano");
-//                } else {
-//                    throw new SQLException("Brano non trovato");
-//                }
-//            }
-//        }
-//    }
 
     public List<Brano> getBraniDaUtenteInterpreteAnno(int id_utente) throws SQLException {
         String query = "SELECT b.id_brano, b.titolo, b.file_musicale, b.id_album, b.id_utente, " +
                 "a.titolo_album, a.interprete, a.anno_pubblicazione, a.genere " +
                 "FROM brano b JOIN album a ON b.id_album = a.id_album " +
                 "WHERE b.id_utente = ? ORDER BY a.interprete ASC, a.anno_pubblicazione ASC";
+
         List<Brano> brani = new ArrayList<>();
         try (PreparedStatement pstatement = connection.prepareStatement(query)) {
             pstatement.setInt(1, id_utente);
@@ -197,6 +187,7 @@ public class BranoDAO {
                 "(SELECT pb.id_brano FROM playlist_brano pb " +
                 "WHERE pb.id_playlist = ? AND pb.id_utente = ?) " +
                 "ORDER BY a.interprete ASC, a.anno_pubblicazione ASC";
+
         List<Brano> brani = new ArrayList<>();
         try (PreparedStatement pstatement = connection.prepareStatement(query)) {
             pstatement.setInt(1, id_utente);

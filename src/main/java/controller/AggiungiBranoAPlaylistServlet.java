@@ -46,8 +46,6 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
                 throw new ServletException("Impossibile stabilire connessione al database");
             }
 
-            System.out.println("AggiungiBranoAPlaylistServlet inizializzata correttamente");
-
         } catch (UnavailableException | SQLException e) {
             System.err.println("Errore durante l'inizializzazione della servlet: " + e.getMessage());
             e.printStackTrace();
@@ -56,12 +54,9 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws IOException {
 
         response.setContentType("application/json;charset=UTF-8");
-
-        System.out.println("AggiungiBranoAPlaylistServlet.doPost() chiamato");
-        System.out.println("Content-Type: " + request.getContentType());
 
         // Verifica sessione utente
         HttpSession session = request.getSession(false);
@@ -214,64 +209,57 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
                 braniDaAggiungere.add(brano);
             }
 
-            // *** NUOVA LOGICA: Gestione ordinamento personalizzato ***
+            //Gestione ordinamento personalizzato
 
             // Prima aggiungi i brani alla playlist normalmente
             branoDAO.aggiungiBraniAllaPlaylist(braniDaAggiungere, playlist, utente);
 
             // Ora recupera TUTTI i brani della playlist per verificare se c'è ordinamento personalizzato
-            // Usa una query diretta invece di chiamare metodi del DAO
             String checkQuery = "SELECT id_brano, ordinamento FROM playlist_brano WHERE id_playlist = ? ORDER BY ordinamento DESC";
 
-            try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
-                checkStmt.setInt(1, playlistId);
+            try (PreparedStatement checkPStatement = connection.prepareStatement(checkQuery)) {
+                checkPStatement.setInt(1, playlistId);
 
-                try (ResultSet rs = checkStmt.executeQuery()) {
-                    boolean hasOrdinamentoPersonalizzato = false;
+                try (ResultSet result = checkPStatement.executeQuery()) {
+                    boolean haOrdinamentoPersonalizzato = false;
                     int maxOrdinamento = 0;
 
                     // Controlla se esiste ordinamento personalizzato
-                    while (rs.next()) {
-                        int ord = rs.getInt("ordinamento");
-                        if (ord > 0) {
-                            hasOrdinamentoPersonalizzato = true;
-                            if (ord > maxOrdinamento) {
-                                maxOrdinamento = ord;
+                    while (result.next()) {
+                        int ordinamento = result.getInt("ordinamento");
+                        if (ordinamento > 0) {
+                            haOrdinamentoPersonalizzato = true;
+                            if (ordinamento > maxOrdinamento) {
+                                maxOrdinamento = ordinamento;
                             }
                         }
                     }
 
-                    System.out.println("Ordinamento personalizzato rilevato: " + hasOrdinamentoPersonalizzato);
+                    System.out.println("Ordinamento personalizzato rilevato: " + haOrdinamentoPersonalizzato);
                     System.out.println("Max ordinamento esistente: " + maxOrdinamento);
 
                     // Se c'è ordinamento personalizzato, aggiorna i brani appena aggiunti
-                    if (hasOrdinamentoPersonalizzato) {
+                    if (haOrdinamentoPersonalizzato) {
                         int nextOrdinamento = maxOrdinamento + 1;
 
                         System.out.println("Assegnazione ordinamento ai nuovi brani a partire da: " + nextOrdinamento);
 
                         String updateQuery = "UPDATE playlist_brano SET ordinamento = ? WHERE id_playlist = ? AND id_brano = ?";
 
-                        try (PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
+                        try (PreparedStatement updatePStatement = connection.prepareStatement(updateQuery)) {
                             for (Brano brano : braniDaAggiungere) {
-                                updateStmt.setInt(1, nextOrdinamento);
-                                updateStmt.setInt(2, playlistId);
-                                updateStmt.setInt(3, brano.getId());
-                                updateStmt.executeUpdate();
+                                updatePStatement.setInt(1, nextOrdinamento);
+                                updatePStatement.setInt(2, playlistId);
+                                updatePStatement.setInt(3, brano.getId());
+                                updatePStatement.executeUpdate();
 
                                 System.out.println("Brano \"" + brano.getTitolo() + "\" - ordinamento impostato a: " + nextOrdinamento);
                                 nextOrdinamento++;
                             }
                         }
-
-                        System.out.println("✅ Brani aggiunti in coda con ordinamento personalizzato");
-                    } else {
-                        System.out.println("✅ Brani aggiunti senza ordinamento personalizzato");
                     }
                 }
             }
-
-            System.out.println("✅ Brani aggiunti con successo - Count: " + braniDaAggiungere.size());
 
             // Risposta di successo (JSON per RIA)
             Map<String, Object> jsonResponse = new HashMap<>();

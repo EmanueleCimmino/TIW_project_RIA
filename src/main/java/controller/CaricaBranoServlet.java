@@ -23,7 +23,7 @@ public class CaricaBranoServlet extends HttpServlet {
     private Connection connection = null;
     private Gson gson;
 
-    // Path assoluto alla cartella Audio (usato anche per GET audio)
+    // Path assoluto alla cartella Audio
     private static final String UPLOAD_FOLDER = "C:\\Users\\emanu\\Audio";
 
     @Override

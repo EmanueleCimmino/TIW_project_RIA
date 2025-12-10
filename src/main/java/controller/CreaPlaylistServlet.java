@@ -54,7 +54,7 @@ public class CreaPlaylistServlet extends HttpServlet {
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws IOException {
 
         response.setContentType("application/json;charset=UTF-8");
 
@@ -78,7 +78,7 @@ public class CreaPlaylistServlet extends HttpServlet {
         boolean isJson = contentType != null && contentType.contains("application/json");
 
         String playlistTitolo;
-        ArrayList<Integer> braniIds = new ArrayList<>();
+        ArrayList<Integer> braniId = new ArrayList<>();
 
         if (isJson) {
             // Parsing JSON
@@ -125,21 +125,21 @@ public class CreaPlaylistServlet extends HttpServlet {
                     JsonArray braniArray = jsonObject.getAsJsonArray("braniSelezionati");
                     for (int i = 0; i < braniArray.size(); i++) {
                         String value = braniArray.get(i).getAsString();
-                        braniIds.add(Integer.parseInt(value));
+                        braniId.add(Integer.parseInt(value));
                     }
                 } else {
                     String value = jsonObject.get("braniSelezionati").getAsString();
-                    braniIds.add(Integer.parseInt(value));
+                    braniId.add(Integer.parseInt(value));
                 }
 
-                if (braniIds.isEmpty()) {
+                if (braniId.isEmpty()) {
                     System.out.println("Errore: nessun brano selezionato");
                     sendErrorResponse(response, 400, "Seleziona almeno un brano per creare la playlist");
                     return;
                 }
 
                 System.out.println("Playlist titolo: " + playlistTitolo);
-                System.out.println("Brani selezionati: " + braniIds.size());
+                System.out.println("Brani selezionati: " + braniId.size());
 
             } catch (Exception e) {
                 System.err.println("Errore parsing JSON: " + e.getMessage());
@@ -176,7 +176,7 @@ public class CreaPlaylistServlet extends HttpServlet {
 
             for (String idString : braniSelezionatiIds) {
                 try {
-                    braniIds.add(Integer.parseInt(idString));
+                    braniId.add(Integer.parseInt(idString));
                 } catch (NumberFormatException e) {
                     sendErrorResponse(response, 400, "ID brano non valido: " + idString);
                     return;
@@ -192,18 +192,16 @@ public class CreaPlaylistServlet extends HttpServlet {
             // Converti gli ID dei brani e recupera gli oggetti Brano
             List<Brano> braniSelezionati = new ArrayList<>();
 
-            for (int branoId : braniIds) {
+            for (int branoId : braniId) {
                 Brano brano = branoDAO.getBrano(branoId);
 
                 if (brano == null) {
-                    System.out.println("Errore: brano non trovato - ID: " + branoId);
                     sendErrorResponse(response, 400, "Brano non trovato: " + branoId);
                     return;
                 }
 
                 // Verifica che il brano appartenga all'utente (sicurezza)
                 if (brano.getId_utente() != utente.getId_utente()) {
-                    System.out.println("Errore: permessi insufficienti per brano ID: " + branoId);
                     sendErrorResponse(response, 403, "Non hai i permessi per aggiungere questo brano");
                     return;
                 }
