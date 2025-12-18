@@ -44,7 +44,6 @@ public class CreaPlaylistServlet extends HttpServlet {
                 throw new ServletException("Impossibile stabilire connessione al database");
             }
 
-            System.out.println("CreaPlaylistServlet inizializzata correttamente");
 
         } catch (UnavailableException | SQLException e) {
             System.err.println("Errore durante l'inizializzazione della servlet: " + e.getMessage());
@@ -58,20 +57,14 @@ public class CreaPlaylistServlet extends HttpServlet {
 
         response.setContentType("application/json;charset=UTF-8");
 
-        System.out.println("CreaPlaylistServlet.doPost() chiamato");
-        System.out.println("Content-Type: " + request.getContentType());
-
         // Verifica sessione utente
         HttpSession session = request.getSession(false);
         Utente utente = (session != null) ? (Utente) session.getAttribute("utente") : null;
 
         if (utente == null) {
-            System.out.println("Errore: utente non autenticato");
             sendErrorResponse(response, 401, "Utente non autenticato");
             return;
         }
-
-        System.out.println("Utente autenticato: " + utente.getUsername());
 
         // Determina se è JSON o form-data
         String contentType = request.getContentType();
@@ -90,12 +83,10 @@ public class CreaPlaylistServlet extends HttpServlet {
                 }
 
                 String jsonString = sb.toString();
-                System.out.println("JSON ricevuto: " + jsonString);
 
                 JsonObject jsonObject = JsonParser.parseString(jsonString).getAsJsonObject();
 
                 if (!jsonObject.has("playlist_titolo")) {
-                    System.out.println("Errore: playlist_titolo mancante nel JSON");
                     sendErrorResponse(response, 400, "Il titolo della playlist è obbligatorio");
                     return;
                 }
@@ -103,19 +94,16 @@ public class CreaPlaylistServlet extends HttpServlet {
                 playlistTitolo = jsonObject.get("playlist_titolo").getAsString().trim();
 
                 if (playlistTitolo.isEmpty()) {
-                    System.out.println("Errore: playlist_titolo vuoto");
                     sendErrorResponse(response, 400, "Il titolo della playlist è obbligatorio");
                     return;
                 }
 
                 if (playlistTitolo.length() > 50) {
-                    System.out.println("Errore: playlist_titolo troppo lungo");
                     sendErrorResponse(response, 400, "Il titolo della playlist non può superare i 50 caratteri");
                     return;
                 }
 
                 if (!jsonObject.has("braniSelezionati")) {
-                    System.out.println("Errore: braniSelezionati mancante nel JSON");
                     sendErrorResponse(response, 400, "Seleziona almeno un brano per creare la playlist");
                     return;
                 }
@@ -133,13 +121,10 @@ public class CreaPlaylistServlet extends HttpServlet {
                 }
 
                 if (braniId.isEmpty()) {
-                    System.out.println("Errore: nessun brano selezionato");
                     sendErrorResponse(response, 400, "Seleziona almeno un brano per creare la playlist");
                     return;
                 }
 
-                System.out.println("Playlist titolo: " + playlistTitolo);
-                System.out.println("Brani selezionati: " + braniId.size());
 
             } catch (Exception e) {
                 System.err.println("Errore parsing JSON: " + e.getMessage());
@@ -152,10 +137,6 @@ public class CreaPlaylistServlet extends HttpServlet {
             // Parsing form-data (fallback per compatibilità)
             playlistTitolo = request.getParameter("playlist_titolo");
             String[] braniSelezionatiIds = request.getParameterValues("braniSelezionati");
-
-            System.out.println("Form-data ricevuto");
-            System.out.println("playlist_titolo: " + playlistTitolo);
-            System.out.println("braniSelezionati: " + (braniSelezionatiIds != null ? braniSelezionatiIds.length : "null"));
 
             if (playlistTitolo == null || playlistTitolo.trim().isEmpty()) {
                 sendErrorResponse(response, 400, "Il titolo della playlist è obbligatorio");
@@ -212,7 +193,6 @@ public class CreaPlaylistServlet extends HttpServlet {
             // Crea la playlist utilizzando il metodo esistente del DAO
             playlistDAO.creaPlaylist(playlistTitolo, braniSelezionati, utente);
 
-            System.out.println("✅ Playlist creata con successo: " + playlistTitolo);
 
             // Risposta di successo (JSON per RIA)
             Map<String, Object> jsonResponse = new HashMap<>();

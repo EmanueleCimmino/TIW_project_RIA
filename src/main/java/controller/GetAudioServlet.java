@@ -35,7 +35,6 @@ public class GetAudioServlet extends HttpServlet {
                 throw new ServletException("Impossibile stabilire connessione al database");
             }
 
-            System.out.println("GetAudioServlet inizializzata correttamente");
 
         } catch (UnavailableException | SQLException e) {
             System.err.println("Errore durante l'inizializzazione della servlet: " + e.getMessage());
@@ -47,20 +46,16 @@ public class GetAudioServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        System.out.println("GetAudioServlet.doGet() chiamato");
-
         // Verifica sessione utente
         HttpSession session = request.getSession(false);
         if (session == null) {
-            System.out.println("Errore: sessione non valida");
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Sessione non valida");
+            response.sendError(401, "Sessione non valida");
             return;
         }
 
         Utente utente = (Utente) session.getAttribute("utente");
         if (utente == null) {
-            System.out.println("Errore: utente non autenticato");
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Utente non autenticato");
+            response.sendError(401, "Utente non autenticato");
             return;
         }
 
@@ -68,8 +63,7 @@ public class GetAudioServlet extends HttpServlet {
         String branoIdParam = request.getParameter("brano_id");
 
         if (branoIdParam == null || branoIdParam.isEmpty()) {
-            System.out.println("Errore: ID brano mancante");
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID brano mancante");
+            response.sendError(400, "ID brano mancante");
             return;
         }
 
@@ -77,12 +71,9 @@ public class GetAudioServlet extends HttpServlet {
         try {
             branoId = Integer.parseInt(branoIdParam);
         } catch (NumberFormatException e) {
-            System.out.println("Errore: ID brano non valido - " + branoIdParam);
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID brano non valido");
+            response.sendError(400, "ID brano non valido");
             return;
         }
-
-        System.out.println("Richiesta audio per brano ID: " + branoId);
 
         BranoDAO branoDAO = new BranoDAO(connection);
 
@@ -91,15 +82,13 @@ public class GetAudioServlet extends HttpServlet {
             Brano brano = branoDAO.getBrano(branoId);
 
             if (brano == null) {
-                System.out.println("Errore: brano non trovato");
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Brano non trovato");
+                response.sendError(404, "Brano non trovato");
                 return;
             }
 
             // Verifica che il brano appartenga all'utente (sicurezza)
             if (brano.getId_utente() != utente.getId_utente()) {
-                System.out.println("Errore: accesso negato per brano ID " + branoId);
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Accesso negato");
+                response.sendError(403, "Accesso negato");
                 return;
             }
 
@@ -107,12 +96,10 @@ public class GetAudioServlet extends HttpServlet {
             String nomeFile = brano.getFile_musicale();
             File audio = new File(AUDIO_PATH + nomeFile);
 
-            System.out.println("File audio: " + audio.getAbsolutePath());
-
             // Verifica che il file esista
             if (!audio.exists() || !audio.isFile()) {
                 System.err.println("Errore: file audio non trovato - " + audio.getAbsolutePath());
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "File audio non trovato");
+                response.sendError(404, "File audio non trovato");
                 return;
             }
 
@@ -121,11 +108,9 @@ public class GetAudioServlet extends HttpServlet {
             String basePath = new File(AUDIO_PATH).getCanonicalPath();
             if (!path.startsWith(basePath)) {
                 System.err.println("Errore: tentativo di accesso fuori dalla cartella consentita");
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Accesso negato");
+                response.sendError(403, "Accesso negato");
                 return;
             }
-
-            System.out.println("File trovato - dimensione: " + audio.length() + " bytes");
 
             // Supporto per HTTP Range Requests (necessario per seek nel player)
             serveAudioWithRangeSupport(audio, request, response);
@@ -133,7 +118,7 @@ public class GetAudioServlet extends HttpServlet {
         } catch (SQLException e) {
             System.err.println("Errore nel recupero dei dati del brano: " + e.getMessage());
             e.printStackTrace();
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            response.sendError(500,
                     "Errore nel recupero del file audio");
         }
     }
@@ -159,8 +144,6 @@ public class GetAudioServlet extends HttpServlet {
         // Gestisci la richiesta Range (es. "Range: bytes=0-1023")
         String rangeHeader = request.getHeader("Range");
 
-        System.out.println("Range header: " + rangeHeader);
-
         if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
             // Parsing del range header (formato: "bytes=start-end")
             String rangeValue = rangeHeader.substring(6); // Rimuovi "bytes="
@@ -178,14 +161,14 @@ public class GetAudioServlet extends HttpServlet {
                 }
 
                 // Valida il range
-                if (inizio < 0 || inizio >= lunghezzaFile || fine >= lunghezzaFile || inizio > fine) {
-                    response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+                if (inizio < 0 || fine >= lunghezzaFile || inizio > fine) {
+                    response.setStatus(416);
                     response.setHeader("Content-Range", "bytes */" + lunghezzaFile);
                     return;
                 }
 
                 // Imposta status 206 Partial Content
-                response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+                response.setStatus(206);
                 response.setHeader("Content-Range", "bytes " + inizio + "-" + fine + "/" + lunghezzaFile);
                 response.setHeader("Accept-Ranges", "bytes");
                 response.setContentLengthLong(fine - inizio + 1);
@@ -196,13 +179,13 @@ public class GetAudioServlet extends HttpServlet {
                 // Range non valido, invia tutto il file
                 inizio = 0;
                 fine = lunghezzaFile - 1;
-                response.setStatus(HttpServletResponse.SC_OK);
+                response.setStatus(200);
                 response.setHeader("Accept-Ranges", "bytes");
                 response.setContentLengthLong(lunghezzaFile);
             }
         } else {
             // Nessun range specificato, invia tutto il file
-            response.setStatus(HttpServletResponse.SC_OK);
+            response.setStatus(200);
             response.setHeader("Accept-Ranges", "bytes");
             response.setContentLengthLong(lunghezzaFile);
         }
@@ -214,7 +197,6 @@ public class GetAudioServlet extends HttpServlet {
 
             byte[] buffer = new byte[BUFFER_SIZE];
             long byteDaLeggere = fine - inizio + 1;
-            long byteLetti = 0;
 
             while (byteDaLeggere > 0) {
                 int lunghezza = randomAccessFile.read(buffer, 0, (int) Math.min(buffer.length, byteDaLeggere));
@@ -225,15 +207,13 @@ public class GetAudioServlet extends HttpServlet {
 
                 response.getOutputStream().write(buffer, 0, lunghezza);
                 byteDaLeggere -= lunghezza;
-                byteLetti += lunghezza;
             }
 
             response.getOutputStream().flush();
-            System.out.println("Audio servito con successo: " + byteLetti + " bytes inviati");
 
         } catch (IOException e) {
             // Il client potrebbe aver chiuso la connessione (normale per il seeking)
-            System.out.println("Connessione chiusa dal client (normale per seeking): " + e.getMessage());
+            System.err.println("Connessione chiusa dal client (normale per seeking): " + e.getMessage());
         }
     }
 

@@ -58,7 +58,7 @@ public class SalvaOrdinamentoServlet extends HttpServlet {
         if (session == null) {
             jsonResponse.put("success", false);
             jsonResponse.put("error", "Sessione non valida");
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setStatus(401);
             response.getWriter().write(gson.toJson(jsonResponse));
             return;
         }
@@ -67,7 +67,7 @@ public class SalvaOrdinamentoServlet extends HttpServlet {
         if (utente == null) {
             jsonResponse.put("success", false);
             jsonResponse.put("error", "Utente non autenticato");
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setStatus(401);
             response.getWriter().write(gson.toJson(jsonResponse));
             return;
         }
@@ -85,22 +85,22 @@ public class SalvaOrdinamentoServlet extends HttpServlet {
             Map<String, Object> jsonRequest = gson.fromJson(buffer.toString(), type);
 
             // Validazione parametri
-            if (!jsonRequest.containsKey("playlist_id") || !jsonRequest.containsKey("brani_ordinati")) {
+            if (!jsonRequest.containsKey("id_playlist") || !jsonRequest.containsKey("brani_ordinati")) {
                 jsonResponse.put("success", false);
                 jsonResponse.put("error", "Parametri mancanti");
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setStatus(400);
                 response.getWriter().write(gson.toJson(jsonResponse));
                 return;
             }
 
-            int id_playlist = ((Number) jsonRequest.get("playlist_id")).intValue();
+            int id_playlist = ((Number) jsonRequest.get("id_playlist")).intValue();
             @SuppressWarnings("unchecked")
             List<Object> braniOrdinatiList = (List<Object>) jsonRequest.get("brani_ordinati");
 
             if (braniOrdinatiList == null || braniOrdinatiList.isEmpty()) {
                 jsonResponse.put("success", false);
                 jsonResponse.put("error", "Lista brani vuota");
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setStatus(400);
                 response.getWriter().write(gson.toJson(jsonResponse));
                 return;
             }
@@ -125,7 +125,7 @@ public class SalvaOrdinamentoServlet extends HttpServlet {
 
             jsonResponse.put("success", false);
             jsonResponse.put("error", "Errore nel salvataggio dell'ordinamento");
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setStatus(500);
             response.getWriter().write(gson.toJson(jsonResponse));
 
         } catch (Exception e) {
@@ -133,8 +133,8 @@ public class SalvaOrdinamentoServlet extends HttpServlet {
             e.printStackTrace();
 
             jsonResponse.put("success", false);
-            jsonResponse.put("error", "Errore nel processamento della richiesta");
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            jsonResponse.put("error", "Errore nello svolgimento della richiesta");
+            response.setStatus(500);
             response.getWriter().write(gson.toJson(jsonResponse));
         }
     }

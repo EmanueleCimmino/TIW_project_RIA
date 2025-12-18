@@ -1,6 +1,5 @@
 package controller;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +21,7 @@ public class LogoutServlet extends HttpServlet {
     }
 
     public void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, ServletException {
+            throws IOException{
 
 
         // Invalida la sessione
@@ -60,7 +59,7 @@ public class LogoutServlet extends HttpServlet {
 
     // Supporto anche per POST
     public void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, ServletException {
+            throws IOException{
         doGet(request, response);
     }
 }

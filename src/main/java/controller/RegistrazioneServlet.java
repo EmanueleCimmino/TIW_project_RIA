@@ -31,7 +31,6 @@ public class RegistrazioneServlet extends HttpServlet {
     public void init() throws ServletException {
         super.init();
         gson = new Gson();
-        System.out.println("RegistrazioneServlet inizializzata con supporto JSON");
     }
 
     @Override
@@ -55,7 +54,6 @@ public class RegistrazioneServlet extends HttpServlet {
             }
 
             String jsonString = sb.toString();
-            System.out.println("JSON ricevuto: " + jsonString);
 
             // Parsing JSON con Gson
             JsonObject jsonObject = JsonParser.parseString(jsonString).getAsJsonObject();
@@ -180,6 +178,5 @@ public class RegistrazioneServlet extends HttpServlet {
         response.setStatus(status);
         response.getWriter().write(gson.toJson(errorJson));
 
-        System.out.println("Risposta errore: " + gson.toJson(errorJson));
     }
 }

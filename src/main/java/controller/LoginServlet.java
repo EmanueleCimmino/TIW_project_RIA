@@ -54,9 +54,6 @@ public class LoginServlet extends HttpServlet {
         // Imposta il tipo di risposta come JSON
         response.setContentType("application/json;charset=UTF-8");
 
-        System.out.println("LoginServlet.doPost() chiamato");
-        System.out.println("Content-Type ricevuto: " + request.getContentType());
-
         String username = null;
         String password = null;
 

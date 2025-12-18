@@ -1,15 +1,8 @@
-/**
- * home.js - Gestione HOME PAGE RIA PoliMusic
- * APPROCCIO PROFESSORE: Separazione load/show/update
- * MODIFICA: Gestione ordinamento personalizzato
- */
-
 (function() {
     'use strict';
 
-    // ========================================
     // DATI APPLICAZIONE
-    // ========================================
+
     let datiUtente = null;
     let tuttiBrani = [];
     let tuttiAlbum = [];
@@ -23,9 +16,8 @@
     let offsetCorrente = 0;
     const BRANI_PER_PAGINA = 5;
 
-    // ========================================
     // INIZIALIZZAZIONE
-    // ========================================
+
     window.addEventListener('DOMContentLoaded', () => {
         console.log('Home page RIA caricata');
 
@@ -43,56 +35,65 @@
         caricaDatiHome();
     }
 
-    // ========================================
     // EVENT LISTENERS
-    // ========================================
+
     function impostaEventListener() {
         // Logout
-        document.getElementById('logoutBtn')?.addEventListener('click', gestisciLogout);
+        document.getElementById('LogoutBtn')?.addEventListener('click', gestisciLogout);
 
         // Form creazione playlist
-        document.getElementById('createPlaylistForm')?.addEventListener('submit', gestisciCreazionePlaylist);
+        document.getElementById('creaPlaylistForm')?.addEventListener('submit', gestisciCreazionePlaylist);
 
         // Form upload brano
-        document.getElementById('uploadSongForm')?.addEventListener('submit', gestisciCaricamentoBrano);
+        document.getElementById('caricaBranoForm')?.addEventListener('submit', gestisciCaricamentoBrano);
 
         // Chiusura modale playlist
-        document.getElementById('btnChiudiModalPlaylist')?.addEventListener('click', chiudiModalePlaylist);
+        document.getElementById('ChiudiModalPlaylistBtn')?.addEventListener('click', () => {
+            chiudiModale('modalPlaylist');
+        });
 
         // Chiusura modale cliccando sull'overlay
         const modalPlaylist = document.getElementById('modalPlaylist');
         if (modalPlaylist) {
-            modalPlaylist.querySelector('.modal-overlay')?.addEventListener('click', chiudiModalePlaylist);
+            modalPlaylist.querySelector('.modal-overlay')?.addEventListener('click', () => {
+                chiudiModale('modalPlaylist');
+            });
         }
 
         // Paginazione playlist (nel modale)
-        document.getElementById('btnPrecedenti')?.addEventListener('click', mostraBraniPrecedenti);
-        document.getElementById('btnSuccessivi')?.addEventListener('click', mostraBraniSuccessivi);
+        document.getElementById('PrecedentiBtn')?.addEventListener('click', mostraBraniPrecedenti);
+        document.getElementById('SuccessiviBtn')?.addEventListener('click', mostraBraniSuccessivi);
 
         // Form aggiungi brani a playlist
-        document.getElementById('addSongsForm')?.addEventListener('submit', gestisciAggiuntaBrani);
+        document.getElementById('aggiungiBraniAllaPlaylistForm')?.addEventListener('submit', gestisciAggiuntaBrani);
 
         // Bottone riordina brani
-        const btnRiordina = document.getElementById('btnRiordinaBrani');
-        if (btnRiordina) {
-            btnRiordina.addEventListener('click', apriModaleRiordino);
+        const RiordinaBtn = document.getElementById('RiordinaBraniBtn');
+        if (RiordinaBtn) {
+            RiordinaBtn.addEventListener('click', apriModaleRiordino);
         }
 
         // Chiusura modale riordino
-        document.getElementById('btnChiudiModalRiordino')?.addEventListener('click', chiudiModaleRiordino);
-        document.getElementById('btnAnnullaRiordino')?.addEventListener('click', chiudiModaleRiordino);
+        document.getElementById('ChiudiModalRiordinoBtn')?.addEventListener('click', () => {
+            chiudiModale('modalRiordino');
+        });
+        document.getElementById('AnnullaRiordinoBtn')?.addEventListener('click', () => {
+            chiudiModale('modalRiordino');
+        });
 
         // Chiusura modale riordino cliccando sull'overlay
         const modalRiordino = document.getElementById('modalRiordino');
         if (modalRiordino) {
-            modalRiordino.querySelector('.modal-overlay')?.addEventListener('click', chiudiModaleRiordino);
+            modalRiordino.querySelector('.modal-overlay')?.addEventListener('click', () => {
+                chiudiModale('modalRiordino');
+            });
         }
 
         // Salva ordinamento
-        document.getElementById('btnSalvaOrdinamento')?.addEventListener('click', salvaOrdinamento);
+        document.getElementById('SalvaOrdinamentoBtn')?.addEventListener('click', salvaOrdinamento);
 
         // Chiusura modale player
-        document.getElementById('btnChiudiModalPlayer')?.addEventListener('click', chiudiModalePlayer);
+        document.getElementById('ChiudiModalPlayerBtn')?.addEventListener('click', chiudiModalePlayer);
 
         // Chiusura modale player cliccando sull'overlay
         const modalPlayer = document.getElementById('modalPlayer');
@@ -101,9 +102,8 @@
         }
     }
 
-    // ========================================
     // CARICAMENTO DATI HOME
-    // ========================================
+
     function caricaDatiHome() {
         console.log('Caricamento dati home...');
 
@@ -161,9 +161,9 @@
         );
     }
 
-    // ========================================
+
     // SHOW: MOSTRA HOME PAGE
-    // ========================================
+
     function mostraHome(dati) {
         console.log('Mostra home page');
 
@@ -179,11 +179,11 @@
         mostraBraniPerPlaylist(dati.brani || []);
     }
 
-    // ========================================
+
     // SHOW: LISTA PLAYLIST
-    // ========================================
+
     function mostraListaPlaylist(playlist) {
-        const contenitore = document.getElementById('playlistsContainer');
+        const contenitore = document.getElementById('contenitorePlaylist');
         if (!contenitore) return;
 
         contenitore.innerHTML = '';
@@ -225,11 +225,10 @@
         });
     }
 
-    // ========================================
     // SHOW: SELECT ALBUM
-    // ========================================
+
     function mostraSelectAlbum(album) {
-        const select = document.getElementById('albumSelect');
+        const select = document.getElementById('SelezionaAlbum');
         if (!select) return;
 
         select.innerHTML = '<option value="">-- Seleziona un album --</option>';
@@ -250,12 +249,11 @@
         });
     }
 
-    // ========================================
     // SHOW: BRANI PER CREAZIONE PLAYLIST
-    // ========================================
+
     function mostraBraniPerPlaylist(brani) {
         const contenitore = document.getElementById('braniSelectionContainer');
-        const btnSubmit = document.getElementById('createPlaylistBtn');
+        const btnSubmit = document.getElementById('creaPlaylistBtn');
 
         if (!contenitore) return;
 
@@ -316,9 +314,8 @@
         });
     }
 
-    // ========================================
     // GESTIONE CREAZIONE PLAYLIST
-    // ========================================
+
     function gestisciCreazionePlaylist(e) {
         e.preventDefault();
 
@@ -331,7 +328,7 @@
             return;
         }
 
-        if (titolo.length > 50) {
+        if (!validaLunghezzaTesto(titolo, 50)) {
             mostraMessaggio('⚠️ Il titolo non può superare i 50 caratteri', 'error');
             return;
         }
@@ -359,20 +356,19 @@
                     mostraMessaggio('❌ Errore nella creazione (HTTP ' + req.status + ')', 'error');
                 }
             },
-            true // Reset form
+            true
         );
     }
 
-    // ========================================
     // GESTIONE UPLOAD BRANO
-    // ========================================
+
     function gestisciCaricamentoBrano(e) {
         e.preventDefault();
 
         const form = e.target;
-        const titolo = document.getElementById('songTitle').value.trim();
-        const idAlbum = document.getElementById('albumSelect').value;
-        const inputFile = document.getElementById('songFile');
+        const titolo = document.getElementById('titolo_brano').value.trim();
+        const idAlbum = document.getElementById('SelezionaAlbum').value;
+        const inputFile = document.getElementById('fileBrano');
 
         if (!titolo || !idAlbum || !inputFile.files[0]) {
             mostraMessaggio('⚠️ Compila tutti i campi obbligatori', 'error');
@@ -380,9 +376,8 @@
         }
 
         const file = inputFile.files[0];
-        const tipiConsentiti = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg'];
 
-        if (!tipiConsentiti.some(tipo => file.type.includes(tipo.split('/')[1]))) {
+        if (!validaFileAudio(file)) {
             mostraMessaggio('⚠️ Formato non valido. Usa MP3, WAV o OGG', 'error');
             return;
         }
@@ -408,18 +403,10 @@
         xhr.send(formData);
     }
 
-    // ========================================
     // MODALE PLAYLIST: APRI
-    // ========================================
+
     function apriModalePlaylist(idPlaylist) {
         console.log('Apri modale playlist:', idPlaylist);
-
-        const modale = document.getElementById('modalPlaylist');
-        if (!modale) return;
-
-        // Mostra modale
-        modale.classList.remove('hidden');
-        modale.style.display = 'flex';
 
         // Reset stato
         offsetCorrente = 0;
@@ -427,34 +414,16 @@
         braniPlaylistCorrente = [];
         braniDisponibili = [];
         albumsMap = {};
+
+        // Apri modale
+        apriModale('modalPlaylist');
 
         // Carica dati playlist
         caricaDatiPlaylist(idPlaylist);
     }
 
-    // ========================================
-    // MODALE PLAYLIST: CHIUDI
-    // ========================================
-    function chiudiModalePlaylist() {
-        console.log('Chiudi modale playlist');
-
-        const modale = document.getElementById('modalPlaylist');
-        if (!modale) return;
-
-        modale.classList.add('hidden');
-        modale.style.display = 'none';
-
-        // Reset stato
-        offsetCorrente = 0;
-        playlistCorrente = null;
-        braniPlaylistCorrente = [];
-        braniDisponibili = [];
-        albumsMap = {};
-    }
-
-    // ========================================
     // LOAD: DATI PLAYLIST
-    // ========================================
+
     function caricaDatiPlaylist(idPlaylist) {
         console.log('Caricamento dati playlist:', idPlaylist);
 
@@ -472,7 +441,7 @@
                         console.log('Dati playlist ricevuti:', risposta);
                     } catch (e) {
                         console.error('Errore parsing JSON:', e);
-                        mostraMessaggioPlaylist('Errore nel formato dei dati', 'error');
+                        mostraMessaggio('Errore nel formato dei dati', 'error', 'playlistMessageContainer');
                         return;
                     }
 
@@ -488,7 +457,7 @@
                             albumsMap[album.id_album] = album;
                         });
 
-                        // *** MODIFICA: Controlla se esiste ordinamento personalizzato ***
+                        // Controlla se esiste ordinamento personalizzato
                         applicaOrdinamentoSeNecessario();
 
                         offsetCorrente = 0;
@@ -499,24 +468,22 @@
                         mostraPlaylist();
 
                     } else {
-                        mostraMessaggioPlaylist(risposta.error || 'Errore caricamento', 'error');
+                        mostraMessaggio(risposta.error || 'Errore caricamento', 'error', 'playlistMessageContainer');
                     }
                 } else if (req.status === 401) {
-                    mostraMessaggioPlaylist('Sessione scaduta', 'error');
+                    mostraMessaggio('Sessione scaduta', 'error', 'playlistMessageContainer');
                     setTimeout(() => window.location.href = 'index.html', 2000);
                 } else {
-                    mostraMessaggioPlaylist('Errore (HTTP ' + req.status + ')', 'error');
+                    mostraMessaggio('Errore (HTTP ' + req.status + ')', 'error', 'playlistMessageContainer');
                 }
             },
             false
         );
     }
 
-    // ========================================
-    // NUOVO: APPLICA ORDINAMENTO PERSONALIZZATO
-    // ========================================
+    // APPLICA ORDINAMENTO PERSONALIZZATO
+
     function applicaOrdinamentoSeNecessario() {
-        // DEBUG: Mostra i dati ricevuti
         console.log('=== DEBUG ORDINAMENTO ===');
         console.log('Numero brani:', braniPlaylistCorrente.length);
 
@@ -525,7 +492,6 @@
             console.log('Campi disponibili:', Object.keys(braniPlaylistCorrente[0]));
         }
 
-        // Mostra tutti i valori di ordinamento
         braniPlaylistCorrente.forEach((brano, idx) => {
             console.log(`Brano ${idx}: "${brano.titolo}" - ordinamento: ${brano.ordinamento}`);
         });
@@ -539,7 +505,6 @@
         console.log('Tutti ordinamento = 0?', tuttiZero);
 
         if (tuttiZero) {
-            // Nessun ordinamento personalizzato, lascia l'ordine originale
             console.log('Nessun ordinamento personalizzato rilevato. Ordine originale mantenuto.');
             return;
         }
@@ -561,9 +526,8 @@
         console.log('=== FINE DEBUG ===');
     }
 
-    // ========================================
     // SHOW: MOSTRA PLAYLIST NEL MODALE
-    // ========================================
+
     function mostraPlaylist() {
         console.log('Mostra playlist nel modale');
 
@@ -580,11 +544,10 @@
         mostraBraniDisponibili();
     }
 
-    // ========================================
     // SHOW: TABELLA BRANI (5 per riga)
-    // ========================================
+
     function mostraTabellaPlaylist() {
-        const tbody = document.getElementById('songsTableBody');
+        const tbody = document.getElementById('tabellaBraniBody');
         if (!tbody) return;
 
         tbody.innerHTML = '';
@@ -618,8 +581,7 @@
                 <div class="song-card" data-brano-id="${brano.id_brano}">
                     <img src="${imgSrc}" 
                          alt="${escapeHtml(album ? album.titolo_album : 'Album')}"
-                         class="song-image"
-                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22%3E%3Crect fill=%22%23ddd%22 width=%22150%22 height=%22150%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2214%22%3ENo Image%3C/text%3E%3C/svg%3E'">
+                         class="song-image">
                     <div class="song-title">${escapeHtml(brano.titolo)}</div>
                 </div>
             `;
@@ -649,13 +611,11 @@
         aggiornaControlliPaginazione();
     }
 
-    // ========================================
     // UPDATE: CONTROLLI PAGINAZIONE
-    // Gestione CLIENT-SIDE (nessuna chiamata server)
-    // ========================================
+
     function aggiornaControlliPaginazione() {
-        const btnPrecedenti = document.getElementById('btnPrecedenti');
-        const btnSuccessivi = document.getElementById('btnSuccessivi');
+        const PrecedentiBtn = document.getElementById('PrecedentiBtn');
+        const SuccessiviBtn = document.getElementById('SuccessiviBtn');
         const infoEl = document.getElementById('paginationInfo');
 
         const totaleBrani = braniPlaylistCorrente.length;
@@ -667,20 +627,18 @@
 
         console.log(`Paginazione: pagina ${paginaCorrente}/${totalePagine}, precedenti=${ciSonoPrecedenti}, successivi=${ciSonoSuccessivi}`);
 
-        // Mostra/nascondi bottoni secondo le specifiche del progetto
         if (ciSonoPrecedenti) {
-            btnPrecedenti.classList.remove('hidden');
+            PrecedentiBtn.classList.remove('hidden');
         } else {
-            btnPrecedenti.classList.add('hidden');
+            PrecedentiBtn.classList.add('hidden');
         }
 
         if (ciSonoSuccessivi) {
-            btnSuccessivi.classList.remove('hidden');
+            SuccessiviBtn.classList.remove('hidden');
         } else {
-            btnSuccessivi.classList.add('hidden');
+            SuccessiviBtn.classList.add('hidden');
         }
 
-        // Info paginazione
         if (totaleBrani > 0 && totalePagine > 1) {
             infoEl.textContent = `Pagina ${paginaCorrente} di ${totalePagine} (${totaleBrani} brani totali)`;
         } else if (totaleBrani > 0) {
@@ -690,35 +648,30 @@
         }
     }
 
-    // ========================================
-    // PAGINAZIONE: PRECEDENTI (CLIENT-SIDE)
-    // ========================================
+    // PAGINAZIONE: PRECEDENTI
+
     function mostraBraniPrecedenti() {
         offsetCorrente = Math.max(0, offsetCorrente - BRANI_PER_PAGINA);
         console.log('Vai a brani precedenti - nuovo offset:', offsetCorrente);
-        // UPDATE: Ricarica solo la tabella, senza fetch
         mostraTabellaPlaylist();
     }
 
-    // ========================================
-    // PAGINAZIONE: SUCCESSIVI (CLIENT-SIDE)
-    // ========================================
+    // PAGINAZIONE: SUCCESSIVI
+
     function mostraBraniSuccessivi() {
         const nuovoOffset = offsetCorrente + BRANI_PER_PAGINA;
         if (nuovoOffset < braniPlaylistCorrente.length) {
             offsetCorrente = nuovoOffset;
             console.log('Vai a brani successivi - nuovo offset:', offsetCorrente);
-            // UPDATE: Ricarica solo la tabella, senza fetch
             mostraTabellaPlaylist();
         }
     }
 
-    // ========================================
     // SHOW: BRANI DISPONIBILI DA AGGIUNGERE
-    // ========================================
+
     function mostraBraniDisponibili() {
         const contenitore = document.getElementById('braniDisponibiliContainer');
-        const btnSubmit = document.getElementById('addSongsBtn');
+        const btnSubmit = document.getElementById('aggiungiBraniAllaPlaylistBtn');
 
         if (!contenitore) return;
 
@@ -735,7 +688,7 @@
         // Hidden input con ID playlist
         const hiddenInput = document.createElement('input');
         hiddenInput.type = 'hidden';
-        hiddenInput.name = 'playlist_id';
+        hiddenInput.name = 'id_playlist';
         hiddenInput.value = playlistCorrente.id_playlist;
         contenitore.appendChild(hiddenInput);
 
@@ -762,9 +715,9 @@
             divBrano.className = 'brano-item';
 
             const album = albumsMap[brano.id_album];
-            const nomeAlbum = album ? album.titolo_album : 'Album sconosciuto';
+            const titolo_album = album ? album.titolo_album : 'Album sconosciuto';
             const interprete = album ? album.interprete : '';
-            const anno = album ? album.anno_pubblicazione : '';
+            const anno_pubblicazione = album ? album.anno_pubblicazione : '';
 
             divBrano.innerHTML = `
                 <label>
@@ -772,9 +725,9 @@
                     <span class="brano-info">
                         <strong>${escapeHtml(brano.titolo)}</strong>
                         <span class="brano-meta">
-                            ${escapeHtml(nomeAlbum)}
+                            ${escapeHtml(titolo_album)}
                             ${interprete ? ' - ' + escapeHtml(interprete) : ''}
-                            ${anno ? ' (' + anno + ')' : ''}
+                            ${anno_pubblicazione ? ' (' + anno_pubblicazione + ')' : ''}
                         </span>
                     </span>
                 </label>
@@ -784,9 +737,8 @@
         });
     }
 
-    // ========================================
     // GESTIONE AGGIUNTA BRANI
-    // ========================================
+
     function gestisciAggiuntaBrani(e) {
         e.preventDefault();
 
@@ -794,7 +746,7 @@
         const checkboxes = form.querySelectorAll('input[name="braniSelezionati_id"]:checked');
 
         if (checkboxes.length === 0) {
-            mostraMessaggioPlaylist('⚠️ Seleziona almeno un brano', 'error');
+            mostraMessaggio('⚠️ Seleziona almeno un brano', 'error', 'playlistMessageContainer');
             return;
         }
 
@@ -808,23 +760,21 @@
                 if (req.readyState !== XMLHttpRequest.DONE) return;
 
                 if (req.status === 200) {
-                    mostraMessaggioPlaylist('✅ Brani aggiunti con successo!', 'success');
-                    // Ricarica playlist e torna al primo blocco
+                    mostraMessaggio('✅ Brani aggiunti con successo!', 'success', 'playlistMessageContainer');
                     setTimeout(() => {
                         offsetCorrente = 0;
                         caricaDatiPlaylist(playlistCorrente.id_playlist);
                     }, 1000);
                 } else {
-                    mostraMessaggioPlaylist('❌ Errore aggiunta brani', 'error');
+                    mostraMessaggio('❌ Errore aggiunta brani', 'error', 'playlistMessageContainer');
                 }
             },
             false
         );
     }
 
-    // ========================================
     // GESTIONE LOGOUT
-    // ========================================
+
     function gestisciLogout() {
         if (!confirm('Sei sicuro di voler uscire?')) return;
 
@@ -834,103 +784,22 @@
             null,
             (req) => {
                 if (req.readyState !== XMLHttpRequest.DONE) return;
-                // In ogni caso, redirect al login
                 window.location.href = 'index.html';
             },
             false
         );
     }
 
-    // ========================================
-    // UTILITY: MESSAGGI
-    // ========================================
-    function mostraMessaggio(messaggio, tipo = 'info') {
-        const contenitore = document.getElementById('messageContainer');
-        if (!contenitore) {
-            console.warn('Contenitore messaggi non trovato');
-            alert(messaggio);
-            return;
-        }
-
-        contenitore.textContent = messaggio;
-        contenitore.className = `message message-${tipo}`;
-        contenitore.style.display = 'block';
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        setTimeout(() => {
-            contenitore.style.display = 'none';
-        }, 5000);
-    }
-
-    function mostraMessaggioPlaylist(messaggio, tipo = 'info') {
-        const contenitore = document.getElementById('playlistMessageContainer');
-        if (!contenitore) {
-            console.warn('Contenitore messaggi playlist non trovato');
-            alert(messaggio);
-            return;
-        }
-
-        contenitore.textContent = messaggio;
-        contenitore.className = `message message-${tipo}`;
-        contenitore.style.display = 'block';
-
-        // Scroll al top del modale
-        const modalBody = document.querySelector('.modal-body-scroll');
-        if (modalBody) {
-            modalBody.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        setTimeout(() => {
-            contenitore.style.display = 'none';
-        }, 5000);
-    }
-
-    // ========================================
-    // UTILITY: FORMATTAZIONE
-    // ========================================
-    function formattaData(stringaData) {
-        if (!stringaData) return 'N/A';
-
-        try {
-            const data = new Date(stringaData);
-            const giorno = String(data.getDate()).padStart(2, '0');
-            const mese = String(data.getMonth() + 1).padStart(2, '0');
-            const anno = data.getFullYear();
-            return `${giorno}/${mese}/${anno}`;
-        } catch (e) {
-            return stringaData;
-        }
-    }
-
-    function escapeHtml(testo) {
-        if (!testo) return '';
-        const div = document.createElement('div');
-        div.textContent = testo;
-        return div.innerHTML;
-    }
-
-    // ========================================
     // MODALE PLAYER
-    // ========================================
 
-    /**
-     * Apre il modale player per un brano
-     */
-    /**
-     * Apre il modale player per un brano
-     */
     function apriModalePlayer(idBrano) {
         console.log('Apri modale player per brano:', idBrano, 'tipo:', typeof idBrano);
 
-        // ✅ FIX: Converti idBrano in numero per confronto corretto
         const idBranoNum = parseInt(idBrano);
         console.log('ID convertito:', idBranoNum);
 
-        // DEBUG: Mostra tutti gli ID disponibili
         console.log('IDs disponibili nella playlist:', braniPlaylistCorrente.map(b => b.id_brano));
 
-        // Trova il brano nei dati correnti
         const brano = braniPlaylistCorrente.find(b => {
             console.log(`Confronto: ${b.id_brano} (${typeof b.id_brano}) == ${idBranoNum} (${typeof idBranoNum}) = ${b.id_brano == idBranoNum}`);
             return b.id_brano == idBranoNum;
@@ -945,17 +814,8 @@
 
         const album = albumsMap[brano.id_album];
 
-        // Apri modale
-        const modale = document.getElementById('modalPlayer');
-        if (!modale) {
-            console.error('Modale player non trovato nel DOM');
-            return;
-        }
+        apriModale('modalPlayer');
 
-        modale.classList.remove('hidden');
-        modale.style.display = 'flex';
-
-        // Popola dati
         document.getElementById('playerBranoTitolo').textContent = '🎵 ' + brano.titolo;
         document.getElementById('playerInfoTitolo').textContent = brano.titolo;
         document.getElementById('playerInfoAlbum').textContent = album ? album.titolo_album : 'N/A';
@@ -963,14 +823,12 @@
         document.getElementById('playerInfoAnno').textContent = album ? album.anno_pubblicazione : 'N/A';
         document.getElementById('playerInfoGenere').textContent = album ? album.genere : 'N/A';
 
-        // Immagine album
         const img = document.getElementById('playerAlbumCover');
         if (img) {
             img.src = `GetAlbum?brano_id=${brano.id_brano}`;
             img.alt = album ? album.titolo_album : 'Copertina album';
         }
 
-        // Audio player
         const audioPlayer = document.getElementById('audioPlayer');
         if (audioPlayer) {
             audioPlayer.src = `GetAudio?brano_id=${brano.id_brano}`;
@@ -980,62 +838,38 @@
         console.log('✅ Modale player aperto per:', brano.titolo);
     }
 
-    /**
-     * Chiude il modale player
-     */
     function chiudiModalePlayer() {
-        const modale = document.getElementById('modalPlayer');
-        if (!modale) return;
-
-        // Ferma l'audio
         const audioPlayer = document.getElementById('audioPlayer');
         if (audioPlayer) {
             audioPlayer.pause();
             audioPlayer.src = '';
         }
 
-        modale.classList.add('hidden');
-        modale.style.display = 'none';
+        chiudiModale('modalPlayer');
     }
 
-    // ========================================
     // MODALE RIORDINO BRANI
-    // ========================================
 
-    let braniOrdinati = []; // Array temporaneo per il drag & drop
+    let braniOrdinati = [];
     let elementoDragato = null;
 
-    /**
-     * Apre il modale riordino brani
-     */
     function apriModaleRiordino() {
         console.log('Apri modale riordino');
 
         if (!playlistCorrente || braniPlaylistCorrente.length === 0) {
-            mostraMessaggioPlaylist('⚠️ Nessun brano nella playlist', 'error');
+            mostraMessaggio('⚠️ Nessun brano nella playlist', 'error', 'playlistMessageContainer');
             return;
         }
 
-        // Copia array brani (per non modificare l'originale durante il drag)
         braniOrdinati = [...braniPlaylistCorrente];
 
-        // Apri modale
-        const modale = document.getElementById('modalRiordino');
-        if (!modale) return;
+        apriModale('modalRiordino');
 
-        modale.classList.remove('hidden');
-        modale.style.display = 'flex';
-
-        // Popola titolo
         document.getElementById('riordinoPlaylistTitolo').textContent = '🔄 Riordina: ' + playlistCorrente.titolo;
 
-        // Renderizza lista brani
         renderizzaListaRiordino();
     }
 
-    /**
-     * Renderizza la lista di brani per il riordino
-     */
     function renderizzaListaRiordino() {
         const lista = document.getElementById('listaBraniRiordino');
         if (!lista) return;
@@ -1046,25 +880,24 @@
             const li = document.createElement('li');
             li.className = 'brano-reorder-item';
             li.draggable = true;
-            li.dataset.branoId = brano.id_brano;
+            li.dataset.id_brano = brano.id_brano;
             li.dataset.index = index;
 
             const album = albumsMap[brano.id_album];
-            const nomeAlbum = album ? album.titolo_album : 'Album sconosciuto';
+            const titolo_album = album ? album.titolo_album : 'Album sconosciuto';
             const interprete = album ? album.interprete : '';
-            const anno = album ? album.anno_pubblicazione : '';
+            const anno_pubblicazione = album ? album.anno_pubblicazione : '';
 
             li.innerHTML = `
                 <div class="brano-reorder-info">
                     <div class="brano-reorder-title">${escapeHtml(brano.titolo)}</div>
                     <div class="brano-reorder-meta">
-                        ${escapeHtml(nomeAlbum)}${interprete ? ' - ' + escapeHtml(interprete) : ''}${anno ? ' (' + anno + ')' : ''}
+                        ${escapeHtml(titolo_album)}${interprete ? ' - ' + escapeHtml(interprete) : ''}${anno_pubblicazione ? ' (' + anno_pubblicazione + ')' : ''}
                     </div>
                 </div>
                 <span class="drag-handle">⋮⋮</span>
             `;
 
-            // Event listeners per drag & drop
             li.addEventListener('dragstart', handleDragStart);
             li.addEventListener('dragend', handleDragEnd);
             li.addEventListener('dragover', handleDragOver);
@@ -1076,9 +909,6 @@
         });
     }
 
-    /**
-     * Handlers per drag & drop
-     */
     function handleDragStart(e) {
         elementoDragato = this;
         this.classList.add('dragging');
@@ -1089,7 +919,6 @@
     function handleDragEnd(e) {
         this.classList.remove('dragging');
 
-        // Rimuovi evidenziazione da tutti gli elementi
         document.querySelectorAll('.brano-reorder-item').forEach(item => {
             item.classList.remove('drag-over');
         });
@@ -1119,43 +948,35 @@
         }
 
         if (elementoDragato !== this) {
-            // Ottieni indici
             const daIndex = parseInt(elementoDragato.dataset.index);
             const aIndex = parseInt(this.dataset.index);
 
-            // Riordina array
             const [elementoSpostato] = braniOrdinati.splice(daIndex, 1);
             braniOrdinati.splice(aIndex, 0, elementoSpostato);
 
-            // Ri-renderizza lista
             renderizzaListaRiordino();
         }
 
         return false;
     }
 
-    /**
-     * Salva il nuovo ordinamento sul server
-     */
     function salvaOrdinamento() {
         console.log('Salva ordinamento');
 
         if (!playlistCorrente || braniOrdinati.length === 0) {
-            mostraMessaggioRiordino('⚠️ Nessun brano da riordinare', 'error');
+            mostraMessaggio('⚠️ Nessun brano da riordinare', 'error', 'riordinoMessageContainer');
             return;
         }
 
-        // Crea array di ID nell'ordine corrente
         const idBraniOrdinati = braniOrdinati.map(b => b.id_brano);
 
         const dati = {
-            playlist_id: playlistCorrente.id_playlist,
+            id_playlist: playlistCorrente.id_playlist,
             brani_ordinati: idBraniOrdinati
         };
 
         console.log('Invio ordinamento:', dati);
 
-        // Invia al server
         const xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function() {
             if (xhr.readyState !== XMLHttpRequest.DONE) return;
@@ -1168,76 +989,33 @@
                     risposta = JSON.parse(xhr.responseText);
                 } catch (e) {
                     console.error('Errore parsing risposta:', e);
-                    mostraMessaggioRiordino('✅ Ordinamento salvato!', 'success');
+                    mostraMessaggio('✅ Ordinamento salvato!', 'success', 'riordinoMessageContainer');
 
-                    // Chiudi modale e ricarica playlist
                     setTimeout(() => {
-                        chiudiModaleRiordino();
+                        chiudiModale('modalRiordino');
                         caricaDatiPlaylist(playlistCorrente.id_playlist);
                     }, 1000);
                     return;
                 }
 
                 if (risposta.success) {
-                    mostraMessaggioRiordino('✅ Ordinamento salvato con successo!', 'success');
+                    mostraMessaggio('✅ Ordinamento salvato con successo!', 'success', 'riordinoMessageContainer');
 
-                    // Chiudi modale e ricarica playlist
                     setTimeout(() => {
-                        chiudiModaleRiordino();
+                        chiudiModale('modalRiordino');
                         caricaDatiPlaylist(playlistCorrente.id_playlist);
                     }, 1000);
                 } else {
-                    mostraMessaggioRiordino('❌ ' + (risposta.error || 'Errore nel salvataggio'), 'error');
+                    mostraMessaggio('❌ ' + (risposta.error || 'Errore nel salvataggio'), 'error', 'riordinoMessageContainer');
                 }
             } else {
-                mostraMessaggioRiordino('❌ Errore nel salvataggio (HTTP ' + xhr.status + ')', 'error');
+                mostraMessaggio('❌ Errore nel salvataggio (HTTP ' + xhr.status + ')', 'error', 'riordinoMessageContainer');
             }
         };
 
         xhr.open('POST', 'SalvaOrdinamento');
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.send(JSON.stringify(dati));
-    }
-
-    /**
-     * Chiude il modale riordino
-     */
-    function chiudiModaleRiordino() {
-        const modale = document.getElementById('modalRiordino');
-        if (!modale) return;
-
-        modale.classList.add('hidden');
-        modale.style.display = 'none';
-
-        // Reset dati
-        braniOrdinati = [];
-        elementoDragato = null;
-    }
-
-    /**
-     * Mostra un messaggio nel modale riordino
-     */
-    function mostraMessaggioRiordino(messaggio, tipo = 'info') {
-        const contenitore = document.getElementById('riordinoMessageContainer');
-        if (!contenitore) {
-            console.warn('Contenitore messaggi riordino non trovato');
-            alert(messaggio);
-            return;
-        }
-
-        contenitore.textContent = messaggio;
-        contenitore.className = `message message-${tipo}`;
-        contenitore.style.display = 'block';
-
-        // Scroll al top del modale
-        const modalBody = document.querySelector('#modalRiordino .modal-body-scroll');
-        if (modalBody) {
-            modalBody.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        setTimeout(() => {
-            contenitore.style.display = 'none';
-        }, 5000);
     }
 
 })();

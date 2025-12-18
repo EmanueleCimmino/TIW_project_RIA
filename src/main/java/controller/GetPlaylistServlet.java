@@ -72,7 +72,7 @@ public class GetPlaylistServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         if (utente == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setStatus(401);
 
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
@@ -86,7 +86,7 @@ public class GetPlaylistServlet extends HttpServlet {
 
         // Validazione parametri
         if (idPlaylistParam == null || idPlaylistParam.isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setStatus(400);
 
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
@@ -100,7 +100,7 @@ public class GetPlaylistServlet extends HttpServlet {
         try {
             idPlaylist = Integer.parseInt(idPlaylistParam);
         } catch (NumberFormatException e) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setStatus(400);
 
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
@@ -119,7 +119,7 @@ public class GetPlaylistServlet extends HttpServlet {
             Playlist playlist = playlistDAO.getPlaylist(idPlaylist);
 
             if (playlist == null) {
-                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                response.setStatus(404);
 
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
@@ -130,7 +130,7 @@ public class GetPlaylistServlet extends HttpServlet {
             }
 
             if (playlist.getId_utente() != utente.getId_utente()) {
-                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setStatus(403);
 
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
@@ -144,10 +144,8 @@ public class GetPlaylistServlet extends HttpServlet {
             List<Brano> brani = branoDAO.getBraniDaPlaylist(idPlaylist);
 
             // Recupera i brani disponibili da aggiungere (non già nella playlist)
-            List<Brano> braniDisponibili = branoDAO.getBraniDisponibiliPlaylist(
-                    utente.getId_utente(),
-                    idPlaylist
-            );
+            List<Brano> braniDisponibili = branoDAO.getBraniDisponibiliPlaylist(utente.getId_utente(),
+                    idPlaylist);
 
             // Recupera tutti gli album per creare la mappa
             List<Album> albums = albumDAO.getAlbums();
@@ -160,7 +158,7 @@ public class GetPlaylistServlet extends HttpServlet {
             jsonResponse.put("braniDisponibili", braniDisponibili);
             jsonResponse.put("albums", albums);
 
-            response.setStatus(HttpServletResponse.SC_OK);
+            response.setStatus(200);
             response.getWriter().write(gson.toJson(jsonResponse));
 
 
@@ -168,7 +166,7 @@ public class GetPlaylistServlet extends HttpServlet {
             System.err.println("Errore SQL nel recupero della playlist: " + e.getMessage());
             e.printStackTrace();
 
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setStatus(500);
 
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);

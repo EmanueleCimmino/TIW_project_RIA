@@ -63,19 +63,16 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
         Utente utente = (session != null) ? (Utente) session.getAttribute("utente") : null;
 
         if (utente == null) {
-            System.out.println("Errore: utente non autenticato");
             sendErrorResponse(response, 401, "Utente non autenticato");
             return;
         }
-
-        System.out.println("Utente autenticato: " + utente.getUsername());
 
         // Determina se è JSON o form-data
         String contentType = request.getContentType();
         boolean isJson = contentType != null && contentType.contains("application/json");
 
-        int playlistId;
-        ArrayList<Integer> braniIds = new ArrayList<>();
+        int id_plalist;
+        ArrayList<Integer> brani_ids = new ArrayList<>();
 
         if (isJson) {
             // Parsing JSON
@@ -87,41 +84,35 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
                 }
 
                 String jsonString = sb.toString();
-                System.out.println("JSON ricevuto: " + jsonString);
 
                 JsonObject jsonObject = JsonParser.parseString(jsonString).getAsJsonObject();
 
-                if (!jsonObject.has("playlist_id")) {
-                    System.out.println("Errore: playlist_id mancante nel JSON");
+                if (!jsonObject.has("id_playlist")) {
                     sendErrorResponse(response, 400, "ID playlist mancante");
                     return;
                 }
 
-                playlistId = jsonObject.get("playlist_id").getAsInt();
+                id_plalist = jsonObject.get("id_playlist").getAsInt();
 
                 // Controlla sia selectedSongs (nuovo nome) che braniSelezionati_id (vecchio nome)
-                String arrayKey = jsonObject.has("selectedSongs") ? "selectedSongs" : "braniSelezionati_id";
+                String arrayKey = jsonObject.has("braniSelezionati") ? "braniSelezionati" : "braniSelezionati_id";
 
                 if (!jsonObject.has(arrayKey)) {
-                    System.out.println("Errore: array brani mancante nel JSON");
                     sendErrorResponse(response, 400, "Seleziona almeno un brano");
                     return;
                 }
 
                 // selectedSongs/braniSelezionati_id può essere un array o un singolo valore
                 if (jsonObject.get(arrayKey).isJsonArray()) {
-                    JsonArray selectedSongs = jsonObject.getAsJsonArray(arrayKey);
-                    for (int i = 0; i < selectedSongs.size(); i++) {
-                        String value = selectedSongs.get(i).getAsString();
-                        braniIds.add(Integer.parseInt(value));
+                    JsonArray braniSelezionati = jsonObject.getAsJsonArray(arrayKey);
+                    for (int i = 0; i < braniSelezionati.size(); i++) {
+                        String value = braniSelezionati.get(i).getAsString();
+                        brani_ids.add(Integer.parseInt(value));
                     }
                 } else {
                     String value = jsonObject.get(arrayKey).getAsString();
-                    braniIds.add(Integer.parseInt(value));
+                    brani_ids.add(Integer.parseInt(value));
                 }
-
-                System.out.println("Playlist ID: " + playlistId);
-                System.out.println("Brani da aggiungere: " + braniIds.size());
 
             } catch (Exception e) {
                 System.err.println("Errore parsing JSON: " + e.getMessage());
@@ -132,17 +123,13 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
 
         } else {
             // Parsing form-data (fallback per compatibilità con vecchio progetto)
-            String playlistIdParam = request.getParameter("playlist_id");
+            String playlistIdParam = request.getParameter("id_playlist");
             String[] braniSelezionati = request.getParameterValues("braniSelezionati_id");
 
             // Se non trova braniSelezionati_id, prova con selectedSongs
             if (braniSelezionati == null) {
-                braniSelezionati = request.getParameterValues("selectedSongs");
+                braniSelezionati = request.getParameterValues("braniSelezionati");
             }
-
-            System.out.println("Form-data ricevuto");
-            System.out.println("playlist_id: " + playlistIdParam);
-            System.out.println("brani: " + (braniSelezionati != null ? braniSelezionati.length : "null"));
 
             if (playlistIdParam == null || playlistIdParam.trim().isEmpty()) {
                 sendErrorResponse(response, 400, "ID playlist mancante");
@@ -150,7 +137,7 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
             }
 
             try {
-                playlistId = Integer.parseInt(playlistIdParam);
+                id_plalist = Integer.parseInt(playlistIdParam);
             } catch (NumberFormatException e) {
                 sendErrorResponse(response, 400, "ID playlist non valido");
                 return;
@@ -163,7 +150,7 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
 
             for (String idString : braniSelezionati) {
                 try {
-                    braniIds.add(Integer.parseInt(idString));
+                    brani_ids.add(Integer.parseInt(idString));
                 } catch (NumberFormatException e) {
                     sendErrorResponse(response, 400, "ID brano non valido: " + idString);
                     return;
@@ -177,12 +164,11 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
 
         try {
             // Verifica che la playlist appartenga all'utente
-            playlistDAO.controllaUtentePlaylist(playlistId, utente.getId_utente());
+            playlistDAO.controllaUtentePlaylist(id_plalist, utente.getId_utente());
 
             // Recupera l'oggetto Playlist
-            Playlist playlist = playlistDAO.getPlaylist(playlistId);
+            Playlist playlist = playlistDAO.getPlaylist(id_plalist);
             if (playlist == null) {
-                System.out.println("Errore: playlist non trovata");
                 sendErrorResponse(response, 404, "Playlist non trovata");
                 return;
             }
@@ -190,18 +176,16 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
             // Converti gli ID dei brani e recupera gli oggetti Brano
             ArrayList<Brano> braniDaAggiungere = new ArrayList<>();
 
-            for (int branoId : braniIds) {
-                Brano brano = branoDAO.getBrano(branoId);
+            for (int id_brano : brani_ids) {
+                Brano brano = branoDAO.getBrano(id_brano);
 
                 if (brano == null) {
-                    System.out.println("Errore: brano non trovato - ID: " + branoId);
-                    sendErrorResponse(response, 400, "Brano non trovato: " + branoId);
+                    sendErrorResponse(response, 400, "Brano non trovato: " + id_brano);
                     return;
                 }
 
                 // Verifica che il brano appartenga all'utente (sicurezza)
                 if (brano.getId_utente() != utente.getId_utente()) {
-                    System.out.println("Errore: permessi insufficienti per brano ID: " + branoId);
                     sendErrorResponse(response, 403, "Non hai i permessi per aggiungere questo brano");
                     return;
                 }
@@ -218,7 +202,7 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
             String checkQuery = "SELECT id_brano, ordinamento FROM playlist_brano WHERE id_playlist = ? ORDER BY ordinamento DESC";
 
             try (PreparedStatement checkPStatement = connection.prepareStatement(checkQuery)) {
-                checkPStatement.setInt(1, playlistId);
+                checkPStatement.setInt(1, id_plalist);
 
                 try (ResultSet result = checkPStatement.executeQuery()) {
                     boolean haOrdinamentoPersonalizzato = false;
@@ -235,25 +219,20 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
                         }
                     }
 
-                    System.out.println("Ordinamento personalizzato rilevato: " + haOrdinamentoPersonalizzato);
-                    System.out.println("Max ordinamento esistente: " + maxOrdinamento);
-
                     // Se c'è ordinamento personalizzato, aggiorna i brani appena aggiunti
                     if (haOrdinamentoPersonalizzato) {
                         int nextOrdinamento = maxOrdinamento + 1;
 
-                        System.out.println("Assegnazione ordinamento ai nuovi brani a partire da: " + nextOrdinamento);
 
                         String updateQuery = "UPDATE playlist_brano SET ordinamento = ? WHERE id_playlist = ? AND id_brano = ?";
 
                         try (PreparedStatement updatePStatement = connection.prepareStatement(updateQuery)) {
                             for (Brano brano : braniDaAggiungere) {
                                 updatePStatement.setInt(1, nextOrdinamento);
-                                updatePStatement.setInt(2, playlistId);
+                                updatePStatement.setInt(2, id_plalist);
                                 updatePStatement.setInt(3, brano.getId());
                                 updatePStatement.executeUpdate();
 
-                                System.out.println("Brano \"" + brano.getTitolo() + "\" - ordinamento impostato a: " + nextOrdinamento);
                                 nextOrdinamento++;
                             }
                         }
@@ -283,9 +262,6 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Metodo helper per inviare risposte di errore in formato JSON
-     */
     private void sendErrorResponse(HttpServletResponse response, int status, String errorMessage)
             throws IOException {
         Map<String, Object> errorJson = new HashMap<>();
@@ -295,7 +271,6 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
         response.setStatus(status);
         response.getWriter().write(gson.toJson(errorJson));
 
-        System.out.println("Risposta errore: " + gson.toJson(errorJson));
     }
 
     public void destroy() {

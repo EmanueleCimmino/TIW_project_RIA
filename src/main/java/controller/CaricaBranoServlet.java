@@ -41,8 +41,6 @@ public class CaricaBranoServlet extends HttpServlet {
             uploadDir.mkdirs();
         }
 
-        System.out.println("CaricaBranoServlet inizializzata correttamente");
-        System.out.println("java.io.tmpdir impostato su: " + System.getProperty("java.io.tmpdir"));
     }
 
     @Override
@@ -52,43 +50,31 @@ public class CaricaBranoServlet extends HttpServlet {
         // Imposta risposta JSON
         response.setContentType("application/json;charset=UTF-8");
 
-        System.out.println("CaricaBranoServlet.doPost() chiamato");
-
         HttpSession session = request.getSession(false);
         Utente utente = (Utente) session.getAttribute("utente");
 
         if (utente == null) {
-            System.out.println("Utente non autenticato");
             sendErrorResponse(response, 401, "Sessione scaduta. Effettua di nuovo il login.");
             return;
         }
-
-        System.out.println("Caricamento brano per utente: " + utente.getUsername());
 
         // Recupera parametri multipart
         String titolo = request.getParameter("titolo");
         String idAlbumStr = request.getParameter("id_album");
         Part filePart = request.getPart("file_musicale");
 
-        System.out.println("Titolo: " + titolo);
-        System.out.println("ID Album: " + idAlbumStr);
-        System.out.println("File part: " + (filePart != null ? filePart.getSubmittedFileName() : "null"));
-
         // Validazione parametri
         if (titolo == null || titolo.trim().isEmpty()) {
-            System.out.println("Errore: titolo mancante");
             sendErrorResponse(response, 400, "Il titolo del brano è obbligatorio");
             return;
         }
 
         if (idAlbumStr == null || idAlbumStr.trim().isEmpty()) {
-            System.out.println("Errore: album non selezionato");
             sendErrorResponse(response, 400, "Devi selezionare un album");
             return;
         }
 
         if (filePart == null || filePart.getSize() == 0) {
-            System.out.println("Errore: file non caricato");
             sendErrorResponse(response, 400, "Devi caricare un file audio");
             return;
         }
@@ -105,15 +91,9 @@ public class CaricaBranoServlet extends HttpServlet {
                     ) + 1
             );
 
-            System.out.println("Nome file pulito: " + fileName);
-            System.out.println("java.io.tmpdir = " + System.getProperty("java.io.tmpdir"));
-            System.out.println("UPLOAD_FOLDER exists: " + new File(UPLOAD_FOLDER).exists());
-            System.out.println("filePart size: " + filePart.getSize());
-
             // Verifica formato file
             String contentType = filePart.getContentType();
             if (contentType == null || !contentType.startsWith("audio/")) {
-                System.out.println("Errore: formato file non valido - " + contentType);
                 sendErrorResponse(response, 400, "Formato file non valido. Usa MP3, WAV o OGG");
                 return;
             }
@@ -130,13 +110,10 @@ public class CaricaBranoServlet extends HttpServlet {
                 return;
             }
 
-            System.out.println("✅ File salvato con successo - Dimensione: " + savedFile.length() + " bytes");
 
             // Salva nel database
             BranoDAO branoDAO = new BranoDAO(connection);
             branoDAO.caricaBrano(titolo, fileName, utente.getId_utente(), idAlbum);
-
-            System.out.println("✅ Brano salvato nel database con successo");
 
             // Risposta JSON di successo
             JsonObject responseJson = new JsonObject();
@@ -172,7 +149,6 @@ public class CaricaBranoServlet extends HttpServlet {
         response.setStatus(status);
         response.getWriter().write(gson.toJson(errorJson));
 
-        System.out.println("Risposta errore: " + gson.toJson(errorJson));
     }
 
     @Override

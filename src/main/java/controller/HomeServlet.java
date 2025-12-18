@@ -52,7 +52,6 @@ public class HomeServlet extends HttpServlet {
                                     context1.serialize(src.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
                     .create();
 
-            System.out.println("HomeServlet inizializzata correttamente");
 
         } catch (UnavailableException | SQLException e) {
             System.err.println("Errore durante l'inizializzazione della servlet: " + e.getMessage());
@@ -65,7 +64,6 @@ public class HomeServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        System.out.println("HomeServlet.doGet() chiamato");
 
         HttpSession session = request.getSession(false);
         Utente utente = (session != null) ? (Utente) session.getAttribute("utente") : null;
@@ -74,8 +72,7 @@ public class HomeServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         if (utente == null) {
-            System.out.println("Utente non autenticato");
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setStatus(401);
 
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
@@ -86,7 +83,6 @@ public class HomeServlet extends HttpServlet {
             return;
         }
 
-        System.out.println("Utente autenticato: " + utente.getUsername());
 
         PlaylistDAO playlistDAO = new PlaylistDAO(connection);
         AlbumDAO albumDAO = new AlbumDAO(connection);
@@ -109,9 +105,8 @@ public class HomeServlet extends HttpServlet {
             jsonResponse.put("brani", brani);
             jsonResponse.put("albums", albums);
             jsonResponse.put("username", utente.getUsername());
-            jsonResponse.put("userId", utente.getId_utente());
 
-            response.setStatus(HttpServletResponse.SC_OK);
+            response.setStatus(200);
             response.getWriter().write(gson.toJson(jsonResponse));
 
 
@@ -119,7 +114,7 @@ public class HomeServlet extends HttpServlet {
             System.err.println("Errore SQL nel recupero dei dati: " + e.getMessage());
             e.printStackTrace();
 
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setStatus(500);
 
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);

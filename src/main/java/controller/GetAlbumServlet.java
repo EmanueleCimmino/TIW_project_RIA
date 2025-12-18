@@ -50,13 +50,13 @@ public class GetAlbumServlet extends HttpServlet {
         // Verifica sessione utente
         HttpSession session = request.getSession(false);
         if (session == null) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Sessione non valida");
+            response.sendError(401, "Sessione non valida");
             return;
         }
 
         Utente utente = (Utente) session.getAttribute("utente");
         if (utente == null) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Utente non autenticato");
+            response.sendError(401, "Utente non autenticato");
             return;
         }
 
@@ -64,7 +64,7 @@ public class GetAlbumServlet extends HttpServlet {
         String brano_id_param = request.getParameter("brano_id");
 
         if (brano_id_param == null || brano_id_param.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID brano mancante");
+            response.sendError(400, "ID brano mancante");
             return;
         }
 
@@ -72,7 +72,7 @@ public class GetAlbumServlet extends HttpServlet {
         try {
             brano_id = Integer.parseInt(brano_id_param);
         } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID brano non valido");
+            response.sendError(400, "ID brano non valido");
             return;
         }
 
@@ -84,13 +84,13 @@ public class GetAlbumServlet extends HttpServlet {
             Brano brano = branoDAO.getBrano(brano_id);
 
             if (brano == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Brano non trovato");
+                response.sendError(404, "Brano non trovato");
                 return;
             }
 
             // Verifica che il brano appartenga all'utente (sicurezza)
             if (brano.getId_utente() != utente.getId_utente()) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Accesso negato");
+                response.sendError(403, "Accesso negato");
                 return;
             }
 
@@ -98,7 +98,7 @@ public class GetAlbumServlet extends HttpServlet {
             Album album = albumDAO.getAlbum(brano.getId_album());
 
             if (album == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Album non trovato");
+                response.sendError(404, "Album non trovato");
                 return;
             }
 
@@ -108,14 +108,14 @@ public class GetAlbumServlet extends HttpServlet {
 
             // Verifica che il file esista
             if (!immagine.exists() || !immagine.isFile()) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Immagine album non trovata");
+                response.sendError(404, "Immagine album non trovata");
                 return;
             }
 
             // Verifica che il file sia all'interno della directory consentita (sicurezza)
             String path = immagine.getCanonicalPath();
             if (!path.startsWith(new File(IMAGE_PATH).getCanonicalPath())) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Accesso negato");
+                response.sendError(403, "Accesso negato");
                 return;
             }
 
@@ -141,13 +141,13 @@ public class GetAlbumServlet extends HttpServlet {
         } catch (SQLException e) {
             System.err.println("Errore nel recupero dei dati dell'album: " + e.getMessage());
             e.printStackTrace();
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            response.sendError(500,
                     "Errore nel recupero dell'immagine");
         }
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws IOException {
         doGet(request, response);
     }
 

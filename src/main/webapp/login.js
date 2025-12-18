@@ -1,7 +1,3 @@
-/**
- * Login management
- */
-
 (function() {
 
     document.getElementById("loginForm").addEventListener('submit', (e) => {

@@ -1,7 +1,3 @@
-/**
- * registrazione.js - Logica RIA per la registrazione di PoliMusic
- */
-
 (function() {
     'use strict';
 
@@ -15,18 +11,12 @@
     let btnText;
     let btnLoader;
 
-    /**
-     * Inizializzazione quando il DOM è pronto
-     */
     document.addEventListener('DOMContentLoaded', () => {
         console.log('Registrazione page inizializzata');
         initializeElements();
         initializeEventListeners();
     });
 
-    /**
-     * Inizializza i riferimenti agli elementi DOM
-     */
     function initializeElements() {
         registrationForm = document.getElementById('registrationForm');
         nomeInput = document.getElementById('nome');
@@ -38,9 +28,6 @@
         btnLoader = document.getElementById('btnLoader');
     }
 
-    /**
-     * Inizializza gli event listeners
-     */
     function initializeEventListeners() {
         if (registrationForm) {
             registrationForm.addEventListener('submit', handleRegistration);
@@ -60,11 +47,6 @@
         });
     }
 
-    /**
-     * Valida un singolo campo
-     * @param {HTMLInputElement} field - Campo da validare
-     * @returns {boolean} True se valido
-     */
     function validateField(field) {
         if (!field) return true;
 
@@ -99,10 +81,6 @@
         }
     }
 
-    /**
-     * Valida l'intero form
-     * @returns {boolean} True se il form è valido
-     */
     function validateRegistrationForm() {
         hideError();
 
@@ -142,10 +120,6 @@
         return isValid;
     }
 
-    /**
-     * Gestisce il submit del form di registrazione
-     * @param {Event} event - Evento submit
-     */
     function handleRegistration(event) {
         event.preventDefault();
 
@@ -241,10 +215,6 @@
         console.log('JSON inviato:', JSON.stringify(registrationData));
     }
 
-    /**
-     * Mostra un messaggio di errore
-     * @param {string} message - Messaggio da mostrare
-     */
     function showErrorMessage(message) {
         const errorDiv = document.getElementById('errorMessage');
         const errorText = document.getElementById('errorText');
@@ -259,10 +229,6 @@
         }
     }
 
-    /**
-     * Mostra un messaggio di successo
-     * @param {string} message - Messaggio da mostrare
-     */
     function showSuccess(message) {
         const errorDiv = document.getElementById('errorMessage');
         const errorText = document.getElementById('errorText');
@@ -277,9 +243,6 @@
         }
     }
 
-    /**
-     * Nascondi il messaggio di errore
-     */
     function hideError() {
         const errorDiv = document.getElementById('errorMessage');
         if (errorDiv) {
@@ -287,10 +250,6 @@
         }
     }
 
-    /**
-     * Abilita/disabilita lo stato di loading del form
-     * @param {boolean} loading - True per abilitare loading
-     */
     function setFormLoading(loading) {
         if (submitBtn) {
             submitBtn.disabled = loading;
