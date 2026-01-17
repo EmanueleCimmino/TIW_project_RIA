@@ -1,14 +1,11 @@
 (function() {
     'use strict';
 
-    // DATI APPLICAZIONE
-
     let datiUtente = null;
     let tuttiBrani = [];
     let tuttiAlbum = [];
     let tuttePlaylist = [];
 
-    // Dati playlist corrente (modale)
     let playlistCorrente = null;
     let braniPlaylistCorrente = [];
     let braniDisponibili = [];
@@ -964,7 +961,7 @@
         console.log('Salva ordinamento');
 
         if (!playlistCorrente || braniOrdinati.length === 0) {
-            mostraMessaggio('⚠️ Nessun brano da riordinare', 'error', 'riordinoMessageContainer');
+            mostraMessaggio('Nessun brano da riordinare', 'error', 'riordinoMessageContainer');
             return;
         }
 
@@ -999,17 +996,17 @@
                 }
 
                 if (risposta.success) {
-                    mostraMessaggio('✅ Ordinamento salvato con successo!', 'success', 'riordinoMessageContainer');
+                    mostraMessaggio('Ordinamento salvato con successo!', 'success', 'riordinoMessageContainer');
 
                     setTimeout(() => {
                         chiudiModale('modalRiordino');
                         caricaDatiPlaylist(playlistCorrente.id_playlist);
                     }, 1000);
                 } else {
-                    mostraMessaggio('❌ ' + (risposta.error || 'Errore nel salvataggio'), 'error', 'riordinoMessageContainer');
+                    mostraMessaggio((risposta.error || 'Errore nel salvataggio'), 'error', 'riordinoMessageContainer');
                 }
             } else {
-                mostraMessaggio('❌ Errore nel salvataggio (HTTP ' + xhr.status + ')', 'error', 'riordinoMessageContainer');
+                mostraMessaggio('Errore nel salvataggio (HTTP ' + xhr.status + ')', 'error', 'riordinoMessageContainer');
             }
         };
 

@@ -45,7 +45,6 @@ public class GetPlaylistServlet extends HttpServlet {
                 throw new ServletException("Impossibile stabilire connessione al database");
             }
 
-            // Configura Gson per gestire LocalDateTime
             this.gson = new GsonBuilder()
                     .registerTypeAdapter(LocalDateTime.class,
                             (JsonSerializer<LocalDateTime>) (src, typeOfSrc, context1) ->
@@ -84,7 +83,6 @@ public class GetPlaylistServlet extends HttpServlet {
 
         String idPlaylistParam = request.getParameter("id_playlist");
 
-        // Validazione parametri
         if (idPlaylistParam == null || idPlaylistParam.isEmpty()) {
             response.setStatus(400);
 
@@ -115,7 +113,6 @@ public class GetPlaylistServlet extends HttpServlet {
         AlbumDAO albumDAO = new AlbumDAO(connection);
 
         try {
-            // Verifica che la playlist appartenga all'utente
             Playlist playlist = playlistDAO.getPlaylist(idPlaylist);
 
             if (playlist == null) {
@@ -140,17 +137,13 @@ public class GetPlaylistServlet extends HttpServlet {
                 return;
             }
 
-            // Recupera tutti i brani della playlist (ordinati)
             List<Brano> brani = branoDAO.getBraniDaPlaylist(idPlaylist);
 
-            // Recupera i brani disponibili da aggiungere (non già nella playlist)
             List<Brano> braniDisponibili = branoDAO.getBraniDisponibiliPlaylist(utente.getId_utente(),
                     idPlaylist);
 
-            // Recupera tutti gli album per creare la mappa
             List<Album> albums = albumDAO.getAlbums();
 
-            // Prepara la risposta JSON
             Map<String, Object> jsonResponse = new HashMap<>();
             jsonResponse.put("success", true);
             jsonResponse.put("playlist", playlist);

@@ -57,7 +57,6 @@ public class CreaPlaylistServlet extends HttpServlet {
 
         response.setContentType("application/json;charset=UTF-8");
 
-        // Verifica sessione utente
         HttpSession session = request.getSession(false);
         Utente utente = (session != null) ? (Utente) session.getAttribute("utente") : null;
 
@@ -66,7 +65,6 @@ public class CreaPlaylistServlet extends HttpServlet {
             return;
         }
 
-        // Determina se è JSON o form-data
         String contentType = request.getContentType();
         boolean isJson = contentType != null && contentType.contains("application/json");
 
@@ -74,7 +72,6 @@ public class CreaPlaylistServlet extends HttpServlet {
         ArrayList<Integer> braniId = new ArrayList<>();
 
         if (isJson) {
-            // Parsing JSON
             try (BufferedReader reader = request.getReader()) {
                 StringBuilder sb = new StringBuilder();
                 String line;
@@ -108,7 +105,6 @@ public class CreaPlaylistServlet extends HttpServlet {
                     return;
                 }
 
-                // braniSelezionati può essere un array o un singolo valore
                 if (jsonObject.get("braniSelezionati").isJsonArray()) {
                     JsonArray braniArray = jsonObject.getAsJsonArray("braniSelezionati");
                     for (int i = 0; i < braniArray.size(); i++) {
@@ -134,7 +130,6 @@ public class CreaPlaylistServlet extends HttpServlet {
             }
 
         } else {
-            // Parsing form-data (fallback per compatibilità)
             playlistTitolo = request.getParameter("playlist_titolo");
             String[] braniSelezionatiIds = request.getParameterValues("braniSelezionati");
 
@@ -165,12 +160,10 @@ public class CreaPlaylistServlet extends HttpServlet {
             }
         }
 
-        // Logica di creazione playlist (identica al vecchio progetto)
         PlaylistDAO playlistDAO = new PlaylistDAO(connection);
         BranoDAO branoDAO = new BranoDAO(connection);
 
         try {
-            // Converti gli ID dei brani e recupera gli oggetti Brano
             List<Brano> braniSelezionati = new ArrayList<>();
 
             for (int branoId : braniId) {
@@ -181,7 +174,6 @@ public class CreaPlaylistServlet extends HttpServlet {
                     return;
                 }
 
-                // Verifica che il brano appartenga all'utente (sicurezza)
                 if (brano.getId_utente() != utente.getId_utente()) {
                     sendErrorResponse(response, 403, "Non hai i permessi per aggiungere questo brano");
                     return;
@@ -190,11 +182,9 @@ public class CreaPlaylistServlet extends HttpServlet {
                 braniSelezionati.add(brano);
             }
 
-            // Crea la playlist utilizzando il metodo esistente del DAO
             playlistDAO.creaPlaylist(playlistTitolo, braniSelezionati, utente);
 
 
-            // Risposta di successo (JSON per RIA)
             Map<String, Object> jsonResponse = new HashMap<>();
             jsonResponse.put("success", true);
             jsonResponse.put("message", "Playlist \"" + playlistTitolo + "\" creata con successo");
@@ -211,9 +201,6 @@ public class CreaPlaylistServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Metodo helper per inviare risposte di errore in formato JSON
-     */
     private void sendErrorResponse(HttpServletResponse response, int status, String errorMessage)
             throws IOException {
         Map<String, Object> errorJson = new HashMap<>();

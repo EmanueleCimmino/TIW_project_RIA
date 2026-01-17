@@ -51,13 +51,11 @@ public class LoginServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        // Imposta il tipo di risposta come JSON
         response.setContentType("application/json;charset=UTF-8");
 
         String username = null;
         String password = null;
 
-        // Leggi il JSON dal body
         try (BufferedReader reader = request.getReader()) {
             StringBuilder sb = new StringBuilder();
             String riga;
@@ -67,7 +65,6 @@ public class LoginServlet extends HttpServlet {
 
             String jsonString = sb.toString();
 
-            // Parsing JSON con Gson
             JsonObject jsonObject = JsonParser.parseString(jsonString).getAsJsonObject();
 
             if (jsonObject.has("username")) {
@@ -85,16 +82,13 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
-        // Validazione parametri
         if (username == null || password == null ||
                 username.trim().isEmpty() || password.trim().isEmpty()) {
             sendErrorResponse(response, 400, "Mancano username e password");
             return;
         }
 
-        // Verifica credenziali usando il DAO
         try {
-            // Verifica che la connessione sia ancora valida
             if (connection == null || connection.isClosed()) {
                 connection = ConnectionHandler.getConnection(getServletContext());
             }
@@ -103,13 +97,11 @@ public class LoginServlet extends HttpServlet {
             Utente utente = utenteDAO.controlloAutenticazione(username, password);
 
             if (utente != null) {
-                // Login riuscito: salva l'utente nella sessione
                 HttpSession session = request.getSession(true);
                 session.setAttribute("utente", utente);
-                session.setMaxInactiveInterval(30 * 60); // 30 minuti
+                session.setMaxInactiveInterval(30 * 60);
 
 
-                // Risposta JSON di successo
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("success", true);
                 responseJson.addProperty("redirectUrl", "home.html");
@@ -118,7 +110,6 @@ public class LoginServlet extends HttpServlet {
                 response.getWriter().write(gson.toJson(responseJson));
 
             } else {
-                // Credenziali errate
                 sendErrorResponse(response, 401, "Username o password errati");
             }
 
@@ -134,9 +125,7 @@ public class LoginServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Metodo helper per inviare risposte di errore in formato JSON
-     */
+
     private void sendErrorResponse(HttpServletResponse response, int status, String errorMessage)
             throws IOException {
         JsonObject errorJson = new JsonObject();

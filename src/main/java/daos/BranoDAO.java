@@ -170,7 +170,7 @@ public class BranoDAO {
                     brano.setFile_musicale(result.getString("file_musicale"));
                     brano.setId_utente(result.getInt("id_utente"));
                     brano.setId_album(result.getInt("id_album"));
-                    brano.setOrdinamento(result.getInt("ordinamento")); // NUOVO
+                    brano.setOrdinamento(result.getInt("ordinamento"));
                     brani.add(brano);
                 }
             }

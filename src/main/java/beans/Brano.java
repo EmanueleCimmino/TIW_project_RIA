@@ -6,7 +6,7 @@ public class Brano {
     private String file_musicale;
     private int id_utente;
     private int id_album;
-    private int ordinamento; // NUOVO CAMPO
+    private int ordinamento;
 
     public int getId() {
         return id_brano;
@@ -48,7 +48,6 @@ public class Brano {
         this.id_album = id_album;
     }
 
-    // NUOVO: Getter e Setter per ordinamento
     public int getOrdinamento() {
         return ordinamento;
     }

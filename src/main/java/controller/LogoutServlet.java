@@ -24,22 +24,18 @@ public class LogoutServlet extends HttpServlet {
             throws IOException{
 
 
-        // Invalida la sessione
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
 
-        // Verifica se è una richiesta AJAX (RIA) o normale
         String ajaxHeader = request.getHeader("X-Requested-With");
         boolean isAjax = "XMLHttpRequest".equals(ajaxHeader);
 
-        // Oppure controlla l'Accept header
         String acceptHeader = request.getHeader("Accept");
         boolean expectsJson = acceptHeader != null && acceptHeader.contains("application/json");
 
         if (isAjax || expectsJson) {
-            // Risposta JSON per RIA
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
 
@@ -51,13 +47,11 @@ public class LogoutServlet extends HttpServlet {
             Gson gson = new Gson();
             response.getWriter().write(gson.toJson(jsonResponse));
         } else {
-            // Redirect tradizionale per applicazione pure HTML
             String path = getServletContext().getContextPath();
             response.sendRedirect(path);
         }
     }
 
-    // Supporto anche per POST
     public void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException{
         doGet(request, response);

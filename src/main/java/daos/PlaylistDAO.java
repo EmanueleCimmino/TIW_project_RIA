@@ -148,7 +148,7 @@ public class PlaylistDAO {
         connection.setAutoCommit(false);
         try (PreparedStatement pstatement = connection.prepareStatement(query)) {
             for (int i = 0; i < idBraniOrdinati.length; i++) {
-                pstatement.setInt(1, i + 1); // ordinamento parte da 1
+                pstatement.setInt(1, i + 1);
                 pstatement.setInt(2, idBraniOrdinati[i]);
                 pstatement.setInt(3, id_playlist);
                 pstatement.setInt(4, id_utente);

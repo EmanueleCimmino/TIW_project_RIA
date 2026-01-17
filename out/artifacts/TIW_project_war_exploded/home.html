@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PoliMusic - Home</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+<!-- Header sempre visibile -->
+<header class="titolo">
+    <div class="container">
+        <h1>🎵 PoliMusic</h1>
+        <div class="info-utente">
+            <span>Benvenuto, <strong id="username">Utente</strong>!</span>
+            <button id="LogoutBtn" class="btn-logout">Logout</button>
+        </div>
+    </div>
+</header>
+
+<main id="mainContainer" class="container">
+
+    <!-- Messaggio feedback globale -->
+    <div id="messageContainer" style="display: none;"></div>
+
+    <!-- Sezione: Le tue Playlist -->
+    <section class="sezione">
+        <h2>📝 Le tue Playlist</h2>
+        <div id="contenitorePlaylist" class="playlists-grid">
+            <p class="caricamento">Caricamento playlist...</p>
+        </div>
+    </section>
+
+    <!-- Due colonne: Carica Brano + Crea Playlist -->
+    <div class="dueColonne">
+
+        <!-- Form: Carica Nuovo Brano -->
+        <section class="sezione">
+            <h2>🎼 Carica Nuovo Brano</h2>
+            <form id="CaricaBranoForm" class="form-card" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="titolo_brano">Titolo Brano *</label>
+                    <input type="text" id="titolo_brano" name="titolo" required
+                           placeholder="Inserisci il titolo del brano">
+                </div>
+
+                <div class="form-group">
+                    <label for="SelezionaAlbum">Seleziona Album *</label>
+                    <select id="SelezionaAlbum" name="id_album" required>
+                        <option value="">-- Seleziona un album --</option>
+                    </select>
+                    <small class="form-hint">L'album da cui proviene il brano</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="fileBrano">Scegli File Musicale *</label>
+                    <input type="file" id="fileBrano" name="file_musicale"
+                           accept="audio/*" required>
+                    <small class="form-hint">Supporto solo per formato MP3</small>
+                </div>
+
+                <button type="submit" class="btn-primary">Carica Brano</button>
+            </form>
+        </section>
+
+        <!-- Form: Crea Nuova Playlist -->
+        <section class="sezione">
+            <h2>➕ Crea Nuova Playlist</h2>
+            <form id="creaPlaylistForm" class="form-card">
+                <div class="form-group">
+                    <label for="playlistTitle">Titolo Playlist *</label>
+                    <input type="text" id="playlistTitle" name="playlist_titolo"
+                           required maxlength="50"
+                           placeholder="Inserisci il titolo della playlist">
+                </div>
+
+                <div class="form-group">
+                    <label>Seleziona i brani da includere *</label>
+                    <p class="form-hint">Ordinati per interprete e anno di pubblicazione</p>
+                    <div id="braniSelectionContainer" class="brani-selezione">
+                        <p class="caricamento">Caricamento brani...</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary" id="creaPlaylistBtn">
+                    Crea Playlist
+                </button>
+            </form>
+        </section>
+
+    </div>
+
+</main>
+
+<!-- MODALE: VISUALIZZA PLAYLIST -->
+
+<div id="modalPlaylist" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content-large">
+
+        <div class="modal-header">
+            <h2 id="playlistTitleView">🎧 Playlist</h2>
+            <button id="ChiudiModalPlaylistBtn" class="btn-close-modal">×</button>
+        </div>
+
+        <div class="modal-body-scroll">
+            <div id="playlistMessageContainer" style="display: none;"></div>
+
+            <div class="playlist-actions-modal">
+                <button id="RiordinaBraniBtn" class="btn-outline">🔄 Riordina Brani</button>
+            </div>
+
+            <div class="playlist-table-container">
+                <table class="tabellaBrani">
+                    <tbody id="tabellaBraniBody"></tbody>
+                </table>
+            </div>
+
+            <div class="pagination-controls">
+                <button id="PrecedentiBtn" class="btn-pagination hidden">← Precedenti</button>
+                <span id="paginationInfo" class="pagination-info"></span>
+                <button id="SuccessiviBtn" class="btn-pagination hidden">Successivi →</button>
+            </div>
+
+            <section class="sezione">
+                <h3>➕ Aggiungi Brani alla Playlist</h3>
+                <form id="aggiungiBraniAllaPlaylistForm" class="form-card">
+                    <div class="form-group">
+                        <label>Seleziona brani da aggiungere</label>
+                        <div id="braniDisponibiliContainer" class="brani-selezione">
+                            <p class="caricamento">Caricamento...</p>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="aggiungiBraniAllaPlaylistBtn">
+                        Aggiungi alla Playlist
+                    </button>
+                </form>
+            </section>
+        </div>
+    </div>
+</div>
+
+<!--MODAL: RIORDINO BRANI (Drag & Drop)-->
+
+<div id="modalRiordino" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content-riordino">
+        <div class="modal-header">
+            <h2 id="riordinoPlaylistTitolo">🔄 Riordina Brani</h2>
+            <button id="ChiudiModalRiordinoBtn" class="btn-close-modal" aria-label="Chiudi">×</button>
+        </div>
+
+        <div class="modal-body-scroll">
+            <!-- Messaggio feedback riordino -->
+            <div id="riordinoMessageContainer" class="message-container" style="display: none;"></div>
+
+            <p class="modal-hint">💡 Trascina i brani per riordinarli. L'ordinamento verrà salvato quando premi "Salva Ordinamento".</p>
+
+            <ol id="listaBraniRiordino" class="reorder-list">
+                <!-- Popolato dinamicamente con drag & drop -->
+            </ol>
+        </div>
+
+        <div class="modal-footer">
+            <button id="SalvaOrdinamentoBtn" class="btn-primary">💾 Salva Ordinamento</button>
+            <button id="AnnullaRiordinoBtn" class="btn-secondary">✖ Annulla</button>
+        </div>
+    </div>
+</div>
+
+<!--MODALE: PLAYER MUSICALE-->
+
+<div id="modalPlayer" class="modal hidden">
+    <div class="modal-overlay"></div>
+
+    <div class="modal-content-player">
+        <div class="modal-header">
+            <h3 id="playerBranoTitolo">🎵 Player</h3>
+            <button id="ChiudiModalPlayerBtn" class="btn-close-modal">×</button>
+        </div>
+
+        <div class="modal-body-scroll">
+            <div class="player-container-modal">
+                <!-- Copertina Album -->
+                <div class="album-cover">
+                    <img id="playerAlbumCover" src="" alt="Copertina album" style="max-width: 100%; width: 300px; height: 300px; object-fit: cover; border-radius: 8px;">
+                </div>
+
+                <!-- Informazioni Brano -->
+                <div class="brano-info-player">
+                    <div class="info-row">
+                        <span class="info-label">Titolo:</span>
+                        <span class="info-value" id="playerInfoTitolo">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Album:</span>
+                        <span class="info-value" id="playerInfoAlbum">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Interprete:</span>
+                        <span class="info-value" id="playerInfoInterprete">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Anno:</span>
+                        <span class="info-value" id="playerInfoAnno">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Genere:</span>
+                        <span class="info-value" id="playerInfoGenere">-</span>
+                    </div>
+                </div>
+
+                <!-- Audio Player -->
+                <div class="audio-player">
+                    <audio id="audioPlayer" controls style="width: 100%; max-width: 500px;">
+                        Il tuo browser non supporta l'elemento audio.
+                    </audio>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="utils.js"></script>
+<script src="home.js"></script>
+
+</body>
+</html>

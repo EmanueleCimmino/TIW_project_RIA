@@ -23,7 +23,7 @@ import utils.ConnectionHandler;
 public class GetAudioServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final String AUDIO_PATH = "C:\\Users\\emanu\\Audio\\";
-    private static final int BUFFER_SIZE = 8192; // 8KB buffer
+    private static final int BUFFER_SIZE = 8192;
     private Connection connection = null;
 
     public void init() throws ServletException {
@@ -46,7 +46,6 @@ public class GetAudioServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        // Verifica sessione utente
         HttpSession session = request.getSession(false);
         if (session == null) {
             response.sendError(401, "Sessione non valida");
@@ -59,7 +58,6 @@ public class GetAudioServlet extends HttpServlet {
             return;
         }
 
-        // Recupera parametro brano_id
         String branoIdParam = request.getParameter("brano_id");
 
         if (branoIdParam == null || branoIdParam.isEmpty()) {
@@ -78,7 +76,6 @@ public class GetAudioServlet extends HttpServlet {
         BranoDAO branoDAO = new BranoDAO(connection);
 
         try {
-            // Recupera il brano
             Brano brano = branoDAO.getBrano(branoId);
 
             if (brano == null) {
@@ -86,24 +83,20 @@ public class GetAudioServlet extends HttpServlet {
                 return;
             }
 
-            // Verifica che il brano appartenga all'utente (sicurezza)
             if (brano.getId_utente() != utente.getId_utente()) {
                 response.sendError(403, "Accesso negato");
                 return;
             }
 
-            // Costruisci il path completo del file audio
             String nomeFile = brano.getFile_musicale();
             File audio = new File(AUDIO_PATH + nomeFile);
 
-            // Verifica che il file esista
             if (!audio.exists() || !audio.isFile()) {
                 System.err.println("Errore: file audio non trovato - " + audio.getAbsolutePath());
                 response.sendError(404, "File audio non trovato");
                 return;
             }
 
-            // Verifica che il file sia all'interno della directory consentita (sicurezza)
             String path = audio.getCanonicalPath();
             String basePath = new File(AUDIO_PATH).getCanonicalPath();
             if (!path.startsWith(basePath)) {
@@ -112,7 +105,6 @@ public class GetAudioServlet extends HttpServlet {
                 return;
             }
 
-            // Supporto per HTTP Range Requests (necessario per seek nel player)
             serveAudioWithRangeSupport(audio, request, response);
 
         } catch (SQLException e) {
@@ -123,10 +115,6 @@ public class GetAudioServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Serve il file audio con supporto per HTTP Range Requests.
-     * Questo è necessario per permettere al player HTML5 di fare seek (spostarsi avanti/indietro)
-     */
     private void serveAudioWithRangeSupport(File audioFile, HttpServletRequest request,
                                             HttpServletResponse response) {
 
@@ -134,40 +122,33 @@ public class GetAudioServlet extends HttpServlet {
         long inizio = 0;
         long fine = lunghezzaFile - 1;
 
-        // Imposta il content type
         String mimeType = getServletContext().getMimeType(audioFile.getName());
         if (mimeType == null) {
-            mimeType = "audio/mpeg"; // Default per MP3
+            mimeType = "audio/mpeg";
         }
         response.setContentType(mimeType);
 
-        // Gestisci la richiesta Range (es. "Range: bytes=0-1023")
         String rangeHeader = request.getHeader("Range");
 
         if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
-            // Parsing del range header (formato: "bytes=start-end")
-            String rangeValue = rangeHeader.substring(6); // Rimuovi "bytes="
+            String rangeValue = rangeHeader.substring(6);
             String[] ranges = rangeValue.split("-");
 
             try {
-                // Parse start
                 if (ranges.length > 0 && !ranges[0].trim().isEmpty()) {
                     inizio = Long.parseLong(ranges[0].trim());
                 }
 
-                // Parse end (opzionale)
                 if (ranges.length > 1 && !ranges[1].trim().isEmpty()) {
                     fine = Long.parseLong(ranges[1].trim());
                 }
 
-                // Valida il range
                 if (inizio < 0 || fine >= lunghezzaFile || inizio > fine) {
                     response.setStatus(416);
                     response.setHeader("Content-Range", "bytes */" + lunghezzaFile);
                     return;
                 }
 
-                // Imposta status 206 Partial Content
                 response.setStatus(206);
                 response.setHeader("Content-Range", "bytes " + inizio + "-" + fine + "/" + lunghezzaFile);
                 response.setHeader("Accept-Ranges", "bytes");
@@ -176,7 +157,6 @@ public class GetAudioServlet extends HttpServlet {
 
             } catch (NumberFormatException e) {
                 System.err.println("Errore parsing range header: " + e.getMessage());
-                // Range non valido, invia tutto il file
                 inizio = 0;
                 fine = lunghezzaFile - 1;
                 response.setStatus(200);
@@ -184,15 +164,12 @@ public class GetAudioServlet extends HttpServlet {
                 response.setContentLengthLong(lunghezzaFile);
             }
         } else {
-            // Nessun range specificato, invia tutto il file
             response.setStatus(200);
             response.setHeader("Accept-Ranges", "bytes");
             response.setContentLengthLong(lunghezzaFile);
         }
 
-        // Invia i dati del file
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(audioFile, "r")) {
-            // Posizionati all'offset di inizio
             randomAccessFile.seek(inizio);
 
             byte[] buffer = new byte[BUFFER_SIZE];
@@ -202,7 +179,7 @@ public class GetAudioServlet extends HttpServlet {
                 int lunghezza = randomAccessFile.read(buffer, 0, (int) Math.min(buffer.length, byteDaLeggere));
 
                 if (lunghezza == -1) {
-                    break; // Fine del file
+                    break;
                 }
 
                 response.getOutputStream().write(buffer, 0, lunghezza);
@@ -212,7 +189,6 @@ public class GetAudioServlet extends HttpServlet {
             response.getOutputStream().flush();
 
         } catch (IOException e) {
-            // Il client potrebbe aver chiuso la connessione (normale per il seeking)
             System.err.println("Connessione chiusa dal client (normale per seeking): " + e.getMessage());
         }
     }

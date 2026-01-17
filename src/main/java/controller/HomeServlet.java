@@ -45,7 +45,6 @@ public class HomeServlet extends HttpServlet {
                 throw new ServletException("Impossibile stabilire connessione al database");
             }
 
-            // Configura Gson per gestire LocalDateTime
             this.gson = new GsonBuilder()
                     .registerTypeAdapter(LocalDateTime.class,
                             (JsonSerializer<LocalDateTime>) (src, typeOfSrc, context1) ->
@@ -89,16 +88,12 @@ public class HomeServlet extends HttpServlet {
         BranoDAO branoDAO = new BranoDAO(connection);
 
         try {
-            // Recupera le playlist dell'utente (ordinate per data decrescente)
             List<Playlist> playlists = playlistDAO.getPlaylistDaUtente(utente.getId_utente());
 
-            // Recupera tutti gli album disponibili
             List<Album> albums = albumDAO.getAlbums();
 
-            // Recupera i brani dell'utente (ordinati per interprete e anno)
             List<Brano> brani = branoDAO.getBraniDaUtenteInterpreteAnno(utente.getId_utente());
 
-            // Prepara la risposta JSON
             Map<String, Object> jsonResponse = new HashMap<>();
             jsonResponse.put("success", true);
             jsonResponse.put("playlists", playlists);

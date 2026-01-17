@@ -53,7 +53,6 @@ public class SalvaOrdinamentoServlet extends HttpServlet {
 
         Map<String, Object> jsonResponse = new HashMap<>();
 
-        // Verifica sessione
         HttpSession session = request.getSession(false);
         if (session == null) {
             jsonResponse.put("success", false);
@@ -73,18 +72,15 @@ public class SalvaOrdinamentoServlet extends HttpServlet {
         }
 
         try {
-            // Leggi il body JSON
             StringBuilder buffer = new StringBuilder();
             String line;
             while ((line = request.getReader().readLine()) != null) {
                 buffer.append(line);
             }
 
-            // Parsing JSON in Map
             Type type = new TypeToken<Map<String, Object>>(){}.getType();
             Map<String, Object> jsonRequest = gson.fromJson(buffer.toString(), type);
 
-            // Validazione parametri
             if (!jsonRequest.containsKey("id_playlist") || !jsonRequest.containsKey("brani_ordinati")) {
                 jsonResponse.put("success", false);
                 jsonResponse.put("error", "Parametri mancanti");
@@ -105,13 +101,11 @@ public class SalvaOrdinamentoServlet extends HttpServlet {
                 return;
             }
 
-            // Converti List in array di int
             int[] idBraniOrdinati = new int[braniOrdinatiList.size()];
             for (int i = 0; i < braniOrdinatiList.size(); i++) {
                 idBraniOrdinati[i] = ((Number) braniOrdinatiList.get(i)).intValue();
             }
 
-            // Salva l'ordinamento
             PlaylistDAO playlistDAO = new PlaylistDAO(connection);
             playlistDAO.salvaOrdinamentoPlaylist(id_playlist, utente.getId_utente(), idBraniOrdinati);
 

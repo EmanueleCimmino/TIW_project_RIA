@@ -37,7 +37,6 @@ public class RegistrazioneServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        // Imposta il tipo di risposta come JSON
         response.setContentType("application/json;charset=UTF-8");
 
         String username = null;
@@ -45,7 +44,6 @@ public class RegistrazioneServlet extends HttpServlet {
         String cognome = null;
         String password = null;
 
-        // Leggi il JSON dal body
         try (BufferedReader reader = request.getReader()) {
             StringBuilder sb = new StringBuilder();
             String riga;
@@ -55,7 +53,6 @@ public class RegistrazioneServlet extends HttpServlet {
 
             String jsonString = sb.toString();
 
-            // Parsing JSON con Gson
             JsonObject jsonObject = JsonParser.parseString(jsonString).getAsJsonObject();
 
             if (jsonObject.has("username")) {
@@ -79,7 +76,6 @@ public class RegistrazioneServlet extends HttpServlet {
             return;
         }
 
-        // Validazione parametri
         if (username == null || password == null || nome == null || cognome == null ||
                 username.trim().isEmpty() || password.trim().isEmpty() ||
                 nome.trim().isEmpty() || cognome.trim().isEmpty()) {
@@ -87,53 +83,44 @@ public class RegistrazioneServlet extends HttpServlet {
             return;
         }
 
-        // Validazione formato username
         Pattern userPattern = Pattern.compile("^[a-zA-Z0-9_]{3,}$");
         if (!userPattern.matcher(username).matches()) {
             sendErrorResponse(response, 400, "Username non valido. Deve contenere almeno 3 caratteri alfanumerici o underscore");
             return;
         }
 
-        // Validazione formato nome
         Pattern nomePattern = Pattern.compile("^[a-zA-Z0-9_]{3,}$");
         if (!nomePattern.matcher(nome).matches()) {
             sendErrorResponse(response, 400, "Nome non valido. Deve contenere almeno 3 caratteri alfanumerici o underscore");
             return;
         }
 
-        // Validazione formato cognome
         Pattern cognomePattern = Pattern.compile("^[a-zA-Z0-9_]{3,}$");
         if (!cognomePattern.matcher(cognome).matches()) {
             sendErrorResponse(response, 400, "Cognome non valido. Deve contenere almeno 3 caratteri alfanumerici o underscore");
             return;
         }
 
-        // Validazione formato password
         Pattern passwordPattern = Pattern.compile("^[a-zA-Z0-9_]{3,}$");
         if (!passwordPattern.matcher(password).matches()) {
             sendErrorResponse(response, 400, "Password non valida. Deve contenere almeno 3 caratteri alfanumerici o underscore");
             return;
         }
 
-        // Creazione utente nel database
         Connection connection = null;
         try {
             connection = ConnectionHandler.getConnection(getServletContext());
             UtenteDAO utenteDAO = new UtenteDAO(connection);
 
-            // Crea l'utente
             utenteDAO.creaUtente(username, nome, cognome, password);
 
-            // Recupera l'utente creato per ottenere l'ID
             Utente nuovoUtente = utenteDAO.getUtenteDaUsername(username);
 
             if (nuovoUtente != null) {
-                // Salva l'utente nella sessione (auto-login dopo registrazione)
                 HttpSession session = request.getSession(true);
                 session.setAttribute("utente", nuovoUtente);
-                session.setMaxInactiveInterval(30 * 60); // 30 minuti
+                session.setMaxInactiveInterval(30 * 60);
 
-                // Risposta JSON di successo
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("success", true);
                 responseJson.addProperty("redirectUrl", "index.html");
@@ -148,7 +135,6 @@ public class RegistrazioneServlet extends HttpServlet {
             System.err.println("Errore database: " + e.getMessage());
             e.printStackTrace();
 
-            // Verifica se è un errore di duplicazione username
             if (e.getMessage() != null && e.getMessage().toLowerCase().contains("duplicate")) {
                 sendErrorResponse(response, 409, "Username già esistente. Scegline un altro.");
             } else {
@@ -156,7 +142,6 @@ public class RegistrazioneServlet extends HttpServlet {
             }
 
         } finally {
-            // Chiudi la connessione se è stata aperta
             if (connection != null) {
                 try {
                     connection.close();
@@ -166,9 +151,7 @@ public class RegistrazioneServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Metodo helper per inviare risposte di errore in formato JSON
-     */
+
     private void sendErrorResponse(HttpServletResponse response, int status, String errorMessage)
             throws IOException {
         JsonObject errorJson = new JsonObject();

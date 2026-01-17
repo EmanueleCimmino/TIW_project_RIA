@@ -75,8 +75,10 @@
     function showErrorMessage(message) {
         const errorDiv = document.getElementById("errorMessage");
         const errorText = document.getElementById("errorText");
+        const messageLabel = document.getElementById("messageLabel");
 
         if (errorDiv && errorText) {
+            if (messageLabel) messageLabel.textContent = "Errore:";
             errorText.textContent = message;
             errorDiv.style.display = "block";
             errorDiv.style.backgroundColor = "";
@@ -89,8 +91,10 @@
     function showSuccess(message) {
         const errorDiv = document.getElementById("errorMessage");
         const errorText = document.getElementById("errorText");
+        const messageLabel = document.getElementById("messageLabel");
 
         if (errorDiv && errorText) {
+            if (messageLabel) messageLabel.textContent = "Successo:";
             errorText.textContent = message;
             errorDiv.style.display = "block";
             errorDiv.style.backgroundColor = "#d4edda";

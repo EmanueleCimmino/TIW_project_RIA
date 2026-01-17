@@ -47,7 +47,6 @@ public class GetAlbumServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws  IOException {
 
-        // Verifica sessione utente
         HttpSession session = request.getSession(false);
         if (session == null) {
             response.sendError(401, "Sessione non valida");
@@ -60,7 +59,6 @@ public class GetAlbumServlet extends HttpServlet {
             return;
         }
 
-        // Recupera parametro brano_id
         String brano_id_param = request.getParameter("brano_id");
 
         if (brano_id_param == null || brano_id_param.isEmpty()) {
@@ -80,7 +78,6 @@ public class GetAlbumServlet extends HttpServlet {
         AlbumDAO albumDAO = new AlbumDAO(connection);
 
         try {
-            // Recupera il brano per verificare che appartenga all'utente
             Brano brano = branoDAO.getBrano(brano_id);
 
             if (brano == null) {
@@ -88,13 +85,11 @@ public class GetAlbumServlet extends HttpServlet {
                 return;
             }
 
-            // Verifica che il brano appartenga all'utente (sicurezza)
             if (brano.getId_utente() != utente.getId_utente()) {
                 response.sendError(403, "Accesso negato");
                 return;
             }
 
-            // Recupera l'album associato al brano
             Album album = albumDAO.getAlbum(brano.getId_album());
 
             if (album == null) {
@@ -102,32 +97,27 @@ public class GetAlbumServlet extends HttpServlet {
                 return;
             }
 
-            // Costruisci il path completo del file immagine
             String nome_file = album.getImmagine_album();
             File immagine = new File(IMAGE_PATH + nome_file);
 
-            // Verifica che il file esista
             if (!immagine.exists() || !immagine.isFile()) {
                 response.sendError(404, "Immagine album non trovata");
                 return;
             }
 
-            // Verifica che il file sia all'interno della directory consentita (sicurezza)
             String path = immagine.getCanonicalPath();
             if (!path.startsWith(new File(IMAGE_PATH).getCanonicalPath())) {
                 response.sendError(403, "Accesso negato");
                 return;
             }
 
-            // Imposta il content type appropriato
             String mimeType = getServletContext().getMimeType(immagine.getName());
             if (mimeType == null) {
-                mimeType = "image/jpeg"; // Default per JPG
+                mimeType = "image/jpeg";
             }
             response.setContentType(mimeType);
             response.setContentLengthLong(immagine.length());
 
-            // Invia il file
             try (FileInputStream fileInputStream = new FileInputStream(immagine);
                  OutputStream outputStream = response.getOutputStream()) {
 

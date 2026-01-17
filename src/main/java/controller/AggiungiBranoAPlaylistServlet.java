@@ -58,7 +58,6 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
 
         response.setContentType("application/json;charset=UTF-8");
 
-        // Verifica sessione utente
         HttpSession session = request.getSession(false);
         Utente utente = (session != null) ? (Utente) session.getAttribute("utente") : null;
 
@@ -67,15 +66,13 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
             return;
         }
 
-        // Determina se è JSON o form-data
         String contentType = request.getContentType();
         boolean isJson = contentType != null && contentType.contains("application/json");
 
-        int id_plalist;
+        int id_playlist;
         ArrayList<Integer> brani_ids = new ArrayList<>();
 
         if (isJson) {
-            // Parsing JSON
             try (BufferedReader reader = request.getReader()) {
                 StringBuilder sb = new StringBuilder();
                 String line;
@@ -92,9 +89,8 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
                     return;
                 }
 
-                id_plalist = jsonObject.get("id_playlist").getAsInt();
+                id_playlist = jsonObject.get("id_playlist").getAsInt();
 
-                // Controlla sia selectedSongs (nuovo nome) che braniSelezionati_id (vecchio nome)
                 String arrayKey = jsonObject.has("braniSelezionati") ? "braniSelezionati" : "braniSelezionati_id";
 
                 if (!jsonObject.has(arrayKey)) {
@@ -102,7 +98,6 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
                     return;
                 }
 
-                // selectedSongs/braniSelezionati_id può essere un array o un singolo valore
                 if (jsonObject.get(arrayKey).isJsonArray()) {
                     JsonArray braniSelezionati = jsonObject.getAsJsonArray(arrayKey);
                     for (int i = 0; i < braniSelezionati.size(); i++) {
@@ -122,11 +117,9 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
             }
 
         } else {
-            // Parsing form-data (fallback per compatibilità con vecchio progetto)
             String playlistIdParam = request.getParameter("id_playlist");
             String[] braniSelezionati = request.getParameterValues("braniSelezionati_id");
 
-            // Se non trova braniSelezionati_id, prova con selectedSongs
             if (braniSelezionati == null) {
                 braniSelezionati = request.getParameterValues("braniSelezionati");
             }
@@ -137,7 +130,7 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
             }
 
             try {
-                id_plalist = Integer.parseInt(playlistIdParam);
+                id_playlist = Integer.parseInt(playlistIdParam);
             } catch (NumberFormatException e) {
                 sendErrorResponse(response, 400, "ID playlist non valido");
                 return;
@@ -158,22 +151,18 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
             }
         }
 
-        // Logica di aggiunta brani (identica al vecchio progetto)
         PlaylistDAO playlistDAO = new PlaylistDAO(connection);
         BranoDAO branoDAO = new BranoDAO(connection);
 
         try {
-            // Verifica che la playlist appartenga all'utente
-            playlistDAO.controllaUtentePlaylist(id_plalist, utente.getId_utente());
+            playlistDAO.controllaUtentePlaylist(id_playlist, utente.getId_utente());
 
-            // Recupera l'oggetto Playlist
-            Playlist playlist = playlistDAO.getPlaylist(id_plalist);
+            Playlist playlist = playlistDAO.getPlaylist(id_playlist);
             if (playlist == null) {
                 sendErrorResponse(response, 404, "Playlist non trovata");
                 return;
             }
 
-            // Converti gli ID dei brani e recupera gli oggetti Brano
             ArrayList<Brano> braniDaAggiungere = new ArrayList<>();
 
             for (int id_brano : brani_ids) {
@@ -184,7 +173,6 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
                     return;
                 }
 
-                // Verifica che il brano appartenga all'utente (sicurezza)
                 if (brano.getId_utente() != utente.getId_utente()) {
                     sendErrorResponse(response, 403, "Non hai i permessi per aggiungere questo brano");
                     return;
@@ -193,22 +181,18 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
                 braniDaAggiungere.add(brano);
             }
 
-            //Gestione ordinamento personalizzato
 
-            // Prima aggiungi i brani alla playlist normalmente
             branoDAO.aggiungiBraniAllaPlaylist(braniDaAggiungere, playlist, utente);
 
-            // Ora recupera TUTTI i brani della playlist per verificare se c'è ordinamento personalizzato
             String checkQuery = "SELECT id_brano, ordinamento FROM playlist_brano WHERE id_playlist = ? ORDER BY ordinamento DESC";
 
             try (PreparedStatement checkPStatement = connection.prepareStatement(checkQuery)) {
-                checkPStatement.setInt(1, id_plalist);
+                checkPStatement.setInt(1, id_playlist);
 
                 try (ResultSet result = checkPStatement.executeQuery()) {
                     boolean haOrdinamentoPersonalizzato = false;
                     int maxOrdinamento = 0;
 
-                    // Controlla se esiste ordinamento personalizzato
                     while (result.next()) {
                         int ordinamento = result.getInt("ordinamento");
                         if (ordinamento > 0) {
@@ -219,7 +203,6 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
                         }
                     }
 
-                    // Se c'è ordinamento personalizzato, aggiorna i brani appena aggiunti
                     if (haOrdinamentoPersonalizzato) {
                         int nextOrdinamento = maxOrdinamento + 1;
 
@@ -229,7 +212,7 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
                         try (PreparedStatement updatePStatement = connection.prepareStatement(updateQuery)) {
                             for (Brano brano : braniDaAggiungere) {
                                 updatePStatement.setInt(1, nextOrdinamento);
-                                updatePStatement.setInt(2, id_plalist);
+                                updatePStatement.setInt(2, id_playlist);
                                 updatePStatement.setInt(3, brano.getId());
                                 updatePStatement.executeUpdate();
 
@@ -240,7 +223,6 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
                 }
             }
 
-            // Risposta di successo (JSON per RIA)
             Map<String, Object> jsonResponse = new HashMap<>();
             jsonResponse.put("success", true);
             jsonResponse.put("message", "Brani aggiunti con successo alla playlist");
@@ -253,7 +235,6 @@ public class AggiungiBranoAPlaylistServlet extends HttpServlet {
             System.err.println("Errore SQL: " + e.getMessage());
             e.printStackTrace();
 
-            // Se il brano è già nella playlist
             if (e.getMessage() != null && e.getMessage().contains("già nella playlist")) {
                 sendErrorResponse(response, 400, "Uno o più brani sono già presenti nella playlist");
             } else {
