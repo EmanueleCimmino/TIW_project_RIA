@@ -42,7 +42,7 @@
         document.getElementById('creaPlaylistForm')?.addEventListener('submit', gestisciCreazionePlaylist);
 
         // Form upload brano
-        document.getElementById('caricaBranoForm')?.addEventListener('submit', gestisciCaricamentoBrano);
+        document.getElementById('CaricaBranoForm')?.addEventListener('submit', gestisciCaricamentoBrano);
 
         // Chiusura modale playlist
         document.getElementById('ChiudiModalPlaylistBtn')?.addEventListener('click', () => {
@@ -367,36 +367,103 @@
         const idAlbum = document.getElementById('SelezionaAlbum').value;
         const inputFile = document.getElementById('fileBrano');
 
-        if (!titolo || !idAlbum || !inputFile.files[0]) {
-            mostraMessaggio('⚠️ Compila tutti i campi obbligatori', 'error');
+        if (!titolo) {
+            mostraMessaggio('⚠️ Il titolo del brano è obbligatorio', 'error');
+            return;
+        }
+
+        if (!idAlbum) {
+            mostraMessaggio('⚠️ Devi selezionare un album', 'error');
+            return;
+        }
+
+        if (!inputFile.files || !inputFile.files[0]) {
+            mostraMessaggio('⚠️ Devi caricare un file audio', 'error');
             return;
         }
 
         const file = inputFile.files[0];
 
+        // Validazione estensione file usando utils.js
         if (!validaFileAudio(file)) {
-            mostraMessaggio('⚠️ Formato non valido. Usa MP3, WAV o OGG', 'error');
+            mostraMessaggio('⚠️ Formato non valido. Usa MP3', 'error');
+            return;
+        }
+
+        const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+        if (file.size > maxSize) {
+            mostraMessaggio('⚠️ Il file è troppo grande. Massimo 50MB', 'error');
             return;
         }
 
         console.log('Upload brano:', titolo);
 
         const formData = new FormData(form);
+
+        for (let [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                console.log(`  ${key}: File(${value.name}, ${value.size} bytes)`);
+            } else {
+                console.log(`  ${key}: ${value}`);
+            }
+        }
+
         const xhr = new XMLHttpRequest();
 
         xhr.onreadystatechange = function() {
             if (xhr.readyState !== XMLHttpRequest.DONE) return;
 
             if (xhr.status === 200) {
-                mostraMessaggio('✅ Brano "' + titolo + '" caricato con successo!', 'success');
-                form.reset();
-                setTimeout(() => caricaDatiHome(), 1000);
+                let risposta;
+                try {
+                    risposta = JSON.parse(xhr.responseText);
+                    console.log('✅ Risposta parsata:', risposta);
+
+                    if (risposta.success) {
+                        mostraMessaggio('✅ ' + risposta.message, 'success');
+                        form.reset();
+                        // Ricarica i dati dopo 1 secondo
+                        setTimeout(() => {
+                            console.log('🔄 Ricarico dati home...');
+                            caricaDatiHome();
+                        }, 1000);
+                    } else {
+                        mostraMessaggio('❌ ' + (risposta.error || 'Errore durante il caricamento'), 'error');
+                    }
+                } catch (e) {
+                    console.error('⚠️ Errore parsing JSON:', e);
+                    console.log('⚠️ Response non è JSON valido, ma status è 200 - considero successo');
+                    mostraMessaggio('✅ Brano "' + titolo + '" caricato con successo!', 'success');
+                    form.reset();
+                    setTimeout(() => caricaDatiHome(), 1000);
+                }
+            } else if (xhr.status === 400) {
+                // Errore validazione
+                try {
+                    const risposta = JSON.parse(xhr.responseText);
+                    mostraMessaggio((risposta.error || 'Dati non validi'), 'error');
+                } catch (e) {
+                    mostraMessaggio('Errore: dati non validi (HTTP 400)', 'error');
+                }
+            } else if (xhr.status === 401) {
+                mostraMessaggio('Sessione scaduta. Reindirizzamento...', 'error');
+                setTimeout(() => window.location.href = 'index.html', 2000);
+            } else if (xhr.status === 500) {
+                try {
+                    const risposta = JSON.parse(xhr.responseText);
+                    mostraMessaggio((risposta.error || 'Errore del server'), 'error');
+                } catch (e) {
+                    mostraMessaggio('Errore del server (HTTP 500)', 'error');
+                }
             } else {
-                mostraMessaggio('❌ Errore upload (HTTP ' + xhr.status + ')', 'error');
+                mostraMessaggio('Errore upload (HTTP ' + xhr.status + ')', 'error');
             }
         };
 
+        // ⚠️ NON impostare Content-Type! Il browser lo imposta automaticamente con il boundary corretto
         xhr.open('POST', 'caricaBrano');
+
+        console.log('Invio richiesta upload...');
         xhr.send(formData);
     }
 

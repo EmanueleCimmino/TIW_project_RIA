@@ -97,7 +97,10 @@ function validaLunghezzaTesto(testo, maxLength) {
     return testo && testo.trim().length > 0 && testo.length <= maxLength;
 }
 
-function validaFileAudio(file, tipiConsentiti = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg']) {
+function validaFileAudio(file) {
     if (!file) return false;
-    return tipiConsentiti.some(tipo => file.type.includes(tipo.split('/')[1]));
+
+    const nomeFile = file.name.toLowerCase();
+    const estensioniValide = ['.mp3'];
+    return estensioniValide.some(ext => nomeFile.endsWith(ext));
 }

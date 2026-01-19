@@ -36,7 +36,6 @@ public class CaricaBranoServlet extends HttpServlet {
         if (!uploadDir.exists()) {
             uploadDir.mkdirs();
         }
-
     }
 
     @Override
@@ -45,7 +44,7 @@ public class CaricaBranoServlet extends HttpServlet {
 
         response.setContentType("application/json;charset=UTF-8");
 
-        HttpSession session = request.getSession(false);
+        HttpSession session = request.getSession();
         Utente utente = (Utente) session.getAttribute("utente");
 
         if (utente == null) {
@@ -83,9 +82,17 @@ public class CaricaBranoServlet extends HttpServlet {
                     ) + 1
             );
 
+            // FIX 2: Validazione meno rigida del content type
             String contentType = filePart.getContentType();
-            if (contentType == null || !contentType.startsWith("audio/")) {
-                sendErrorResponse(response, 400, "Formato file non valido. Usa MP3, WAV o OGG");
+            String lowerFileName = fileName.toLowerCase();
+            boolean isValidAudio = (contentType != null && contentType.startsWith("audio/")) ||
+                    lowerFileName.endsWith(".mp3") ||
+                    lowerFileName.endsWith(".wav") ||
+                    lowerFileName.endsWith(".ogg") ||
+                    lowerFileName.endsWith(".m4a");
+
+            if (!isValidAudio) {
+                sendErrorResponse(response, 400, "Formato file non valido. Usa MP3, WAV, OGG o M4A");
                 return;
             }
 
@@ -99,7 +106,7 @@ public class CaricaBranoServlet extends HttpServlet {
             }
 
             BranoDAO branoDAO = new BranoDAO(connection);
-            branoDAO.caricaBrano(titolo, fileName, utente.getId_utente(), idAlbum);
+            branoDAO.caricaBrano(titolo, fileName, idAlbum, utente.getId_utente());
 
             JsonObject responseJson = new JsonObject();
             responseJson.addProperty("success", true);
@@ -130,7 +137,6 @@ public class CaricaBranoServlet extends HttpServlet {
 
         response.setStatus(status);
         response.getWriter().write(gson.toJson(errorJson));
-
     }
 
     @Override
