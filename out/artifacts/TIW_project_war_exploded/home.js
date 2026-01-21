@@ -116,6 +116,7 @@
                 if (req.status === 200) {
                     let risposta;
                     try {
+                        console.log(req.responseText);
                         risposta = JSON.parse(req.responseText);
                         console.log('Dati home ricevuti:', risposta);
                     } catch (e) {
@@ -190,7 +191,7 @@
             return;
         }
 
-        console.log(`Mostra ${playlist.length} playlist`);
+        console.log(`Mostra ${playlist.length} brani`);
 
         playlist.forEach(pl => {
             if (!pl) return;
