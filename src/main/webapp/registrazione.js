@@ -1,7 +1,6 @@
 (function() {
     'use strict';
 
-    // Riferimenti agli elementi DOM
     let registrationForm;
     let nomeInput;
     let cognomeInput;
@@ -33,7 +32,6 @@
             registrationForm.addEventListener('submit', handleRegistration);
         }
 
-        // Validazione real-time per ogni campo
         const fields = [nomeInput, cognomeInput, usernameInput, passwordInput];
         fields.forEach(field => {
             if (field) {
@@ -55,7 +53,6 @@
         const errorElementId = `errore${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`;
         const errorElement = document.getElementById(errorElementId);
 
-        // Pattern per validazione
         const pattern = /^[a-zA-Z0-9_]{3,}$/;
 
         if (value === '') {
@@ -111,7 +108,6 @@
             if (!firstInvalidField) firstInvalidField = passwordInput;
         }
 
-        // Focus sul primo campo invalido
         if (!isValid && firstInvalidField) {
             firstInvalidField.focus();
             showErrorMessage('Correggi i campi evidenziati in rosso');
@@ -125,94 +121,73 @@
 
         console.log('Tentativo di registrazione...');
 
-        // Validazione form
         if (!validateRegistrationForm()) {
             return;
         }
 
-        // Disabilita il form durante il submit
-        setFormLoading(true);
+        setButtonLoading(true);
 
-        // Prepara i dati manualmente (NON usare FormData che potrebbe essere vuoto)
-        const registrationData = {
-            nome: nomeInput.value.trim(),
-            cognome: cognomeInput.value.trim(),
-            username: usernameInput.value.trim(),
-            password: passwordInput.value.trim()
-        };
+        makeCall(
+            'POST',
+            'registrazione',
+            registrationForm,
+            function(req) {
+                if (req.readyState !== XMLHttpRequest.DONE) return;
 
-        console.log('Dati da inviare:', registrationData);
+                setButtonLoading(false);
 
-        // Chiamata AJAX manuale
-        const xhr = new XMLHttpRequest();
+                const message = req.responseText;
 
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE) return;
+                console.log("Status:", req.status);
+                console.log("Response:", message);
 
-            setFormLoading(false);
+                if (req.status === 200) {
+                    let response;
+                    try {
+                        response = JSON.parse(message);
+                    } catch (e) {
+                        showSuccess("✅ Registrazione completata! Benvenuto in PoliMusic!");
+                        setTimeout(() => {
+                            window.location.href = "index.html";
+                        }, 1500);
+                        return;
+                    }
 
-            const message = xhr.responseText;
+                    if (response.success !== false) {
+                        sessionStorage.setItem('username', usernameInput.value);
 
-            console.log("Status:", xhr.status);
-            console.log("Response:", message);
+                        showSuccess("✅ Registrazione completata! Benvenuto in PoliMusic!");
 
-            if (xhr.status === 200) {
-                let response;
-                try {
-                    response = JSON.parse(message);
-                } catch (e) {
-                    // Fallback se non è JSON
-                    showSuccess("✅ Registrazione completata! Benvenuto in PoliMusic!");
-                    setTimeout(() => {
-                        window.location.href = "index.html";
-                    }, 1500);
-                    return;
-                }
+                        setTimeout(() => {
+                            window.location.href = "index.html";
+                        }, 1500);
 
-                if (response.success !== false) {
-                    // Salva username in sessionStorage
-                    sessionStorage.setItem('username', usernameInput.value);
+                    } else {
+                        showErrorMessage(response.error || "Errore durante la registrazione");
+                        if (nomeInput) nomeInput.focus();
+                    }
 
-                    showSuccess("✅ Registrazione completata! Benvenuto in PoliMusic!");
-
-                    // Redirect dopo un breve delay
-                    setTimeout(() => {
-                        window.location.href = "index.html";
-                    }, 1500);
-
+                } else if (req.status === 409) {
+                    // Username duplicato
+                    showErrorMessage("Username già esistente. Scegline un altro.");
+                    usernameInput.focus();
+                    usernameInput.classList.add('input-error');
+                } else if (req.status === 400) {
+                    // Errore di validazione
+                    try {
+                        const response = JSON.parse(message);
+                        showErrorMessage(response.error || "Compila correttamente tutti i campi");
+                    } catch (e) {
+                        showErrorMessage("Compila correttamente tutti i campi");
+                    }
                 } else {
-                    showErrorMessage(response.error || "Errore durante la registrazione");
-                    if (nomeInput) nomeInput.focus();
+                    showErrorMessage(message || "Errore durante la registrazione. Riprova.");
                 }
+            },
+            false
+        );
 
-            } else if (xhr.status === 409) {
-                // Username duplicato
-                showErrorMessage("Username già esistente. Scegline un altro.");
-                usernameInput.focus();
-                usernameInput.classList.add('input-error');
-            } else if (xhr.status === 400) {
-                // Errore di validazione
-                try {
-                    const response = JSON.parse(message);
-                    showErrorMessage(response.error || "Compila correttamente tutti i campi");
-                } catch (e) {
-                    showErrorMessage("Compila correttamente tutti i campi");
-                }
-            } else {
-                showErrorMessage(message || "Errore durante la registrazione. Riprova.");
-            }
-        };
-
-        // Apri la connessione
-        xhr.open('POST', 'registrazione', true);
-
-        // Imposta l'header per JSON
-        xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-
-        // Invia i dati come JSON
-        xhr.send(JSON.stringify(registrationData));
-
-        console.log('JSON inviato:', JSON.stringify(registrationData));
+        console.log('Richiesta di registrazione inviata');
     }
 
     function showErrorMessage(message) {
@@ -250,7 +225,7 @@
         }
     }
 
-    function setFormLoading(loading) {
+    function setButtonLoading(loading) {
         if (submitBtn) {
             submitBtn.disabled = loading;
         }
@@ -264,12 +239,6 @@
                 btnLoader.style.display = 'none';
             }
         }
-
-        // Disabilita/abilita input fields
-        const inputs = registrationForm.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.disabled = loading;
-        });
     }
 
 })();

@@ -461,7 +461,6 @@
             }
         };
 
-        // ⚠️ NON impostare Content-Type! Il browser lo imposta automaticamente con il boundary corretto
         xhr.open('POST', 'caricaBrano');
 
         console.log('Invio richiesta upload...');
